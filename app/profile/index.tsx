@@ -232,10 +232,6 @@ export default function ProfileScreen() {
           <Icon name="chev" size={14} stroke={colors.ink2} sw={1.6} />
         </TouchableOpacity>
 
-        {/* Footer */}
-        <Text style={[styles.footer, { color: colors.ink2 }]}>
-          {t.footerText}
-        </Text>
       </ScrollView>
 
       <TabBar />

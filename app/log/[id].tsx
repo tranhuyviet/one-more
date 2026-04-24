@@ -72,7 +72,7 @@ export default function LogScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: 16 }]}>
         <TouchableOpacity onPress={() => router.back()}>
           <Icon name="close" size={22} stroke={colors.ink2} sw={1.6} />
         </TouchableOpacity>
