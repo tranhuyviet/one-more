@@ -1,0 +1,297 @@
+import React, { useState } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, Alert, Switch,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useProfileStore } from '@/store/useProfileStore';
+import Icon from '@/components/ui/Icon';
+import TabBar from '@/components/ui/TabBar';
+import { TAB_BAR_HEIGHT } from '@/constants/theme';
+import { Language } from '@/types';
+
+const LANGUAGES: { id: Language; flag: string; name: string }[] = [
+  { id: 'vi', flag: '🇻🇳', name: 'Tiếng Việt' },
+  { id: 'en', flag: '🇬🇧', name: 'English' },
+];
+
+interface RowProps {
+  label: string;
+  icon: string;
+  value?: string;
+  action?: React.ReactNode;
+  onPress?: () => void;
+  danger?: boolean;
+  isLast?: boolean;
+  colors: ReturnType<typeof useTheme>['colors'];
+}
+
+function Row({ label, icon, value, action, onPress, danger, isLast, colors }: RowProps) {
+  return (
+    <TouchableOpacity
+      style={[styles.row, { borderBottomColor: colors.line, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth }]}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <View style={[styles.rowIcon, {
+        backgroundColor: danger ? colors.dangerSoft : colors.accentSoft,
+      }]}>
+        <Text style={styles.rowIconText}>{icon}</Text>
+      </View>
+      <Text style={[styles.rowLabel, { color: danger ? colors.danger : colors.ink, flex: 1 }]}>
+        {label}
+      </Text>
+      {value && <Text style={[styles.rowValue, { color: colors.ink2 }]}>{value}</Text>}
+      {action || (onPress && <Icon name="chev" size={14} stroke={colors.ink2} sw={1.6} />)}
+    </TouchableOpacity>
+  );
+}
+
+export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+  const user = useAuthStore(s => s.user);
+  const profile = useProfileStore(s => s.profile);
+  const { updateName, updateLanguage, toggleDarkMode } = useProfileStore();
+
+  const [name, setName] = useState(profile?.name ?? '');
+  const [editingName, setEditingName] = useState(false);
+
+  async function handleNameSave() {
+    if (!user || !name.trim()) return;
+    await updateName(user.uid, name.trim());
+    setEditingName(false);
+  }
+
+  async function handleLangChange(lang: Language) {
+    if (!user) return;
+    await updateLanguage(user.uid, lang);
+  }
+
+  async function handleToggleDark() {
+    if (!user) return;
+    await toggleDarkMode(user.uid);
+  }
+
+  const initials = (profile?.name ?? 'U')
+    .split(' ')
+    .map(w => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  return (
+    <View style={[styles.flex, { backgroundColor: colors.bg }]}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_HEIGHT + 24 },
+        ]}
+      >
+        <Text style={[styles.title, { color: colors.ink }]}>{t.profileTitle}</Text>
+
+        {/* Avatar + name */}
+        <View style={styles.avatarRow}>
+          <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
+            <Text style={[styles.avatarText, { color: colors.accent }]}>{initials}</Text>
+          </View>
+          <View style={styles.nameContainer}>
+            <Text style={[styles.nameFieldLabel, { color: colors.ink2 }]}>
+              {t.yourName.toUpperCase()}
+            </Text>
+            <View style={[styles.nameInputRow, {
+              borderColor: editingName ? colors.accent : colors.line,
+              borderWidth: editingName ? 1.5 : 1,
+              backgroundColor: colors.card,
+            }]}>
+              {editingName ? (
+                <TextInput
+                  style={[styles.nameInput, { color: colors.ink }]}
+                  value={name}
+                  onChangeText={setName}
+                  onBlur={handleNameSave}
+                  onSubmitEditing={handleNameSave}
+                  autoFocus
+                  returnKeyType="done"
+                />
+              ) : (
+                <TouchableOpacity
+                  style={styles.nameDisplay}
+                  onPress={() => setEditingName(true)}
+                >
+                  <Text style={[styles.nameText, { color: colors.ink }]}>{profile?.name}</Text>
+                </TouchableOpacity>
+              )}
+              {!editingName && (
+                <Icon name="pencil" size={14} stroke={colors.ink2} sw={1.8} />
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Language */}
+        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 24 }]}>
+          {t.language.toUpperCase()}
+        </Text>
+        <View style={styles.langList}>
+          {LANGUAGES.map(l => {
+            const active = l.id === (profile?.language ?? 'vi');
+            return (
+              <TouchableOpacity
+                key={l.id}
+                style={[
+                  styles.langRow,
+                  {
+                    borderColor: active ? colors.accent : colors.line,
+                    borderWidth: active ? 1.5 : 1,
+                    backgroundColor: active ? colors.accentSoft : 'transparent',
+                  },
+                ]}
+                onPress={() => handleLangChange(l.id)}
+              >
+                <Text style={styles.flag}>{l.flag}</Text>
+                <Text style={[styles.langName, {
+                  color: active ? colors.accentInk : colors.ink,
+                  fontWeight: active ? '600' : '500',
+                }]}>
+                  {l.name}
+                </Text>
+                <View style={[styles.radio, {
+                  borderColor: active ? colors.accent : colors.line,
+                  backgroundColor: active ? colors.accent : 'transparent',
+                }]}>
+                  {active && <Icon name="check" size={11} stroke="#fff" sw={2.5} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Appearance */}
+        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 24 }]}>
+          {t.appearance.toUpperCase()}
+        </Text>
+        <Row
+          label={t.darkMode}
+          icon="🌙"
+          onPress={handleToggleDark}
+          isLast
+          colors={colors}
+          action={
+            <Switch
+              value={isDark}
+              onValueChange={handleToggleDark}
+              trackColor={{ true: colors.accent, false: colors.line }}
+              thumbColor="#fff"
+            />
+          }
+        />
+
+        {/* Data */}
+        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
+          {t.data.toUpperCase()}
+        </Text>
+        <View style={[styles.warningCard, {
+          backgroundColor: colors.warning,
+          borderColor: colors.warningBorder,
+        }]}>
+          <Text style={styles.warningIcon}>⚠️</Text>
+          <Text style={[styles.warningText, { color: colors.warningText }]}>
+            {t.dataWarning}
+          </Text>
+        </View>
+        <Row label={t.exportJson} icon="⬇️" value="0 bản ghi" onPress={() => {}} colors={colors} />
+        <Row label={t.importFile} icon="⬆️" onPress={() => {}} colors={colors} />
+        <Row label="Lưu lên iCloud Drive" icon="☁️" onPress={() => {}} colors={colors} />
+        <Row label="Chia sẻ qua email" icon="✉️" isLast onPress={() => {}} colors={colors} />
+
+        {/* Other */}
+        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
+          {t.other.toUpperCase()}
+        </Text>
+        <Row label={t.about} icon="ℹ️" value="v1.0" onPress={() => {}} colors={colors} />
+        <Row
+          label={t.deleteAll}
+          icon="🗑️"
+          danger
+          isLast
+          colors={colors}
+          onPress={() => Alert.alert(
+            t.deleteAll,
+            'Bạn chắc chắn muốn xoá toàn bộ dữ liệu? Hành động này không thể hoàn tác.',
+            [
+              { text: t.cancel, style: 'cancel' },
+              { text: 'Xoá', style: 'destructive', onPress: () => {} },
+            ],
+          )}
+        />
+
+        {/* Footer */}
+        <Text style={[styles.footer, { color: colors.ink2 }]}>
+          {t.footerText}
+        </Text>
+      </ScrollView>
+
+      <TabBar />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  content: { paddingHorizontal: 24 },
+  title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8, marginBottom: 28 },
+  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 8 },
+  avatar: {
+    width: 72, height: 72, borderRadius: 36,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avatarText: { fontSize: 26, fontWeight: '500', letterSpacing: -0.5 },
+  nameContainer: { flex: 1 },
+  nameFieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, marginBottom: 6 },
+  nameInputRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 12, borderRadius: 10, borderWidth: 1,
+  },
+  nameDisplay: { flex: 1, paddingVertical: 10 },
+  nameText: { fontSize: 17, fontWeight: '600' },
+  nameInput: { flex: 1, fontSize: 17, fontWeight: '600', paddingVertical: 10 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.8, marginBottom: 10 },
+  langList: { gap: 6 },
+  langRow: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 13, borderRadius: 12, gap: 12,
+  },
+  flag: { fontSize: 20 },
+  langName: { flex: 1, fontSize: 15 },
+  radio: {
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 1.5, alignItems: 'center', justifyContent: 'center',
+  },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 16,
+  },
+  rowIcon: {
+    width: 30, height: 30, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center', marginRight: 12,
+  },
+  rowIconText: { fontSize: 14 },
+  rowLabel: { fontSize: 15 },
+  rowValue: { fontSize: 14, marginRight: 8 },
+  warningCard: {
+    flexDirection: 'row', gap: 10,
+    padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 14,
+  },
+  warningIcon: { fontSize: 18, lineHeight: 22 },
+  warningText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  footer: {
+    textAlign: 'center', fontSize: 11, lineHeight: 18,
+    marginTop: 32, opacity: 0.6,
+  },
+});
