@@ -117,6 +117,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.bg }]}>
+      <View style={[styles.statusBarCover, { height: insets.top, backgroundColor: colors.bg }]} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -373,6 +374,7 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  statusBarCover: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   content: { paddingHorizontal: 24 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 },
   title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8 },

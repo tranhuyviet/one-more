@@ -120,6 +120,7 @@ export default function StatsScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.bg }]}>
+      <View style={[styles.statusBarCover, { height: insets.top, backgroundColor: colors.bg }]} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -346,6 +347,7 @@ export default function StatsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  statusBarCover: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   content: { paddingHorizontal: 24 },
   title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8, marginBottom: 4 },
   subtitle: { fontSize: 13, marginBottom: 24 },
