@@ -50,6 +50,7 @@ export default function RootLayout() {
         <Stack.Screen name="exercises/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="exercises/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="log/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="log/picker" options={{ presentation: 'transparentModal', animation: 'fade' }} />
         <Stack.Screen name="history/index" />
         <Stack.Screen name="stats/index" />
         <Stack.Screen name="profile/index" />

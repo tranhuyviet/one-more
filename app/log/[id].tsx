@@ -217,7 +217,7 @@ export default function LogScreen() {
           <View style={[styles.switchSheet, { backgroundColor: colors.bg, paddingBottom: insets.bottom + 16 }]}>
             <View style={[styles.switchHandle, { backgroundColor: colors.line }]} />
             <Text style={[styles.switchTitle, { color: colors.ink2 }]}>
-              {t.switchExercise.toUpperCase()}
+              {t.chooseExercise.toUpperCase()}
             </Text>
             {exercises.map((ex, i) => {
               const isActive = ex.id === activeId;

@@ -13,7 +13,7 @@ type TabItem =
 const TABS: TabItem[] = [
   { id: 'home',    href: '/',          icon: 'home',  labelKey: 'home' },
   { id: 'stats',   href: '/stats',     icon: 'chart', labelKey: 'stats' },
-  { id: 'log',     href: '/exercises', icon: 'plus',  labelKey: 'log', big: true },
+  { id: 'log',     href: '/log/picker', icon: 'plus',  labelKey: 'log', big: true },
   { id: 'history', href: '/history',   icon: 'list',  labelKey: 'history' },
   { id: 'profile', href: '/profile',   icon: 'user',  labelKey: 'profile' },
 ];
