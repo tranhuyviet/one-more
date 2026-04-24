@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, Switch,
+  StyleSheet, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -231,45 +231,6 @@ export default function ProfileScreen() {
           <Text style={[styles.rowLabel, { color: colors.accent }]}>{t.addExercise}</Text>
           <Icon name="chev" size={14} stroke={colors.ink2} sw={1.6} />
         </TouchableOpacity>
-
-        {/* Data */}
-        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
-          {t.data.toUpperCase()}
-        </Text>
-        <View style={[styles.warningCard, {
-          backgroundColor: colors.warning,
-          borderColor: colors.warningBorder,
-        }]}>
-          <Text style={styles.warningIcon}>⚠️</Text>
-          <Text style={[styles.warningText, { color: colors.warningText }]}>
-            {t.dataWarning}
-          </Text>
-        </View>
-        <Row label={t.exportJson} icon="⬇️" value="0 bản ghi" onPress={() => {}} colors={colors} />
-        <Row label={t.importFile} icon="⬆️" onPress={() => {}} colors={colors} />
-        <Row label="Lưu lên iCloud Drive" icon="☁️" onPress={() => {}} colors={colors} />
-        <Row label="Chia sẻ qua email" icon="✉️" isLast onPress={() => {}} colors={colors} />
-
-        {/* Other */}
-        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
-          {t.other.toUpperCase()}
-        </Text>
-        <Row label={t.about} icon="ℹ️" value="v1.0" onPress={() => {}} colors={colors} />
-        <Row
-          label={t.deleteAll}
-          icon="🗑️"
-          danger
-          isLast
-          colors={colors}
-          onPress={() => Alert.alert(
-            t.deleteAll,
-            'Bạn chắc chắn muốn xoá toàn bộ dữ liệu? Hành động này không thể hoàn tác.',
-            [
-              { text: t.cancel, style: 'cancel' },
-              { text: 'Xoá', style: 'destructive', onPress: () => {} },
-            ],
-          )}
-        />
 
         {/* Footer */}
         <Text style={[styles.footer, { color: colors.ink2 }]}>
