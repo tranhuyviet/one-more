@@ -146,29 +146,31 @@ export default function HomeScreen() {
 
               if (isExp && hasData) {
                 return (
-                  <View key={ex.id} style={[styles.exCard, { backgroundColor: colors.accentSoft }]}>
+                  <View key={ex.id} style={[styles.exCard, { backgroundColor: `${ex.color}15` }]}>
                     {/* Card header — tap to collapse or go to log */}
                     <TouchableOpacity
                       style={styles.exCardHeader}
                       onPress={() => setExpanded(null)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.exIcon}>{ex.icon}</Text>
+                      <View style={[styles.exIconBadge, { backgroundColor: `${ex.color}28` }]}>
+                        <Text style={styles.exIconText}>{ex.icon}</Text>
+                      </View>
                       <View style={styles.exInfo}>
-                        <Text style={[styles.exName, { color: colors.accentInk, fontWeight: '600' }]}>{ex.name}</Text>
-                        <Text style={[styles.exSets, { color: colors.accent }]}>{stats!.sets} {t.sets}</Text>
+                        <Text style={[styles.exName, { color: colors.ink, fontWeight: '600' }]}>{ex.name}</Text>
+                        <Text style={[styles.exSets, { color: ex.color }]}>{stats!.sets} {t.sets}</Text>
                       </View>
                       <View style={styles.exValueWrap}>
-                        <Text style={[styles.exTotal, { color: colors.accentInk }]}>{total}</Text>
-                        <Text style={[styles.exUnit, { color: colors.accent }]}>{unitStr}</Text>
+                        <Text style={[styles.exTotal, { color: colors.ink }]}>{total}</Text>
+                        <Text style={[styles.exUnit, { color: ex.color }]}>{unitStr}</Text>
                       </View>
                       <View style={[styles.chevWrap, { transform: [{ rotate: '90deg' }] }]}>
-                        <Icon name="chev" size={13} stroke={colors.accent} sw={2} />
+                        <Icon name="chev" size={13} stroke={ex.color} sw={2} />
                       </View>
                     </TouchableOpacity>
 
                     {/* Divider + set rows */}
-                    <View style={[styles.cardDivider, { backgroundColor: colors.accentLine }]} />
+                    <View style={[styles.cardDivider, { backgroundColor: `${ex.color}30` }]} />
                     <View style={styles.exCardDetail}>
                       {stats!.logs.map((log, j) => {
                         const logTime = new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -181,7 +183,7 @@ export default function HomeScreen() {
                             note={log.note}
                             unit={ex.unit as Unit}
                             isLast={j === stats!.logs.length - 1}
-                            accentColors={{ bg: colors.accentLine, text: colors.accentInk, border: colors.accentLine }}
+                            accentColors={{ bg: `${ex.color}20`, text: ex.color, border: `${ex.color}30` }}
                           />
                         );
                       })}
@@ -189,12 +191,12 @@ export default function HomeScreen() {
 
                     {/* Add more button */}
                     <TouchableOpacity
-                      style={[styles.addMoreBtn, { borderTopColor: colors.accentLine }]}
+                      style={[styles.addMoreBtn, { borderTopColor: `${ex.color}30` }]}
                       onPress={() => router.push(`/log/${ex.id}`)}
                       activeOpacity={0.7}
                     >
-                      <Icon name="plus" size={14} stroke={colors.accent} sw={2.5} />
-                      <Text style={[styles.addMoreText, { color: colors.accent }]}>Thêm set</Text>
+                      <Icon name="plus" size={14} stroke={ex.color} sw={2.5} />
+                      <Text style={[styles.addMoreText, { color: ex.color }]}>Thêm set</Text>
                     </TouchableOpacity>
                   </View>
                 );
@@ -211,7 +213,9 @@ export default function HomeScreen() {
                   onPress={() => handleExPress(ex.id)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.exIcon}>{ex.icon}</Text>
+                  <View style={[styles.exIconBadge, { backgroundColor: `${ex.color}18` }]}>
+                    <Text style={styles.exIconText}>{ex.icon}</Text>
+                  </View>
                   <Text style={[styles.exName, { color: colors.ink }]}>{ex.name}</Text>
                   <View style={styles.exValueWrap}>
                     <Text style={[styles.exTotal, { color: colors.ink }]}>{total}</Text>
@@ -273,7 +277,8 @@ const styles = StyleSheet.create({
   exRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth },
 
   // Shared
-  exIcon: { fontSize: 20, marginRight: 12, lineHeight: 24 },
+  exIconBadge: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  exIconText: { fontSize: 16, lineHeight: 20 },
   exInfo: { flex: 1 },
   exName: { flex: 1, fontSize: 15, fontWeight: '500' },
   exSets: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, marginTop: 3 },
