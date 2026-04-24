@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, KeyboardAvoidingView, Platform,
+  StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -21,39 +21,60 @@ import { Unit } from '@/types';
 const MUSCLE_GROUPS = ['Ngực / Vai', 'Lưng', 'Chân', 'Bụng', 'Cardio', 'Toàn thân'];
 
 export default function AddExerciseScreen() {
+  const { id: editId, name: prefillName, icon: prefillIcon } = useLocalSearchParams<{
+    id?: string; name?: string; icon?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useTranslation();
   const user = useAuthStore(s => s.user);
-  const { addExercise, exercises } = useExerciseStore();
+  const { addExercise, updateExercise, deleteExercise, exercises } = useExerciseStore();
 
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState('💪');
-  const [unit, setUnit] = useState<Unit>('reps');
-  const [color, setColor] = useState(EXERCISE_COLOR_OPTIONS[0]);
-  const [muscleGroup, setMuscleGroup] = useState('');
-  const [dailyGoal, setDailyGoal] = useState(0);
+  const existing = editId ? exercises.find(e => e.id === editId) : undefined;
+  const isEdit = !!existing;
+
+  const [name, setName] = useState(existing?.name ?? prefillName ?? '');
+  const [icon, setIcon] = useState(existing?.icon ?? prefillIcon ?? '💪');
+  const [unit, setUnit] = useState<Unit>(existing?.unit ?? 'reps');
+  const [color, setColor] = useState(existing?.color ?? EXERCISE_COLOR_OPTIONS[0]);
+  const [muscleGroup, setMuscleGroup] = useState(existing?.muscleGroup ?? '');
+  const [dailyGoal, setDailyGoal] = useState(existing?.dailyGoal ?? 0);
   const [saving, setSaving] = useState(false);
 
-  async function handleCreate() {
+  async function handleSave() {
     if (!user || !name.trim()) return;
     setSaving(true);
     try {
-      await addExercise(user.uid, {
-        name: name.trim(),
-        icon,
-        unit,
-        color,
-        muscleGroup,
-        dailyGoal: dailyGoal > 0 ? dailyGoal : undefined,
-        sortOrder: exercises.length,
-        createdAt: Date.now(),
-      });
+      const data = { name: name.trim(), icon, unit, color, muscleGroup, dailyGoal: dailyGoal > 0 ? dailyGoal : undefined };
+      if (isEdit) {
+        await updateExercise(user.uid, existing!.id, data);
+      } else {
+        await addExercise(user.uid, { ...data, sortOrder: exercises.length, createdAt: Date.now() });
+      }
       router.back();
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleDelete() {
+    if (!user || !existing) return;
+    Alert.alert(
+      t.deleteExercise,
+      t.deleteExerciseConfirm,
+      [
+        { text: t.cancel, style: 'cancel' },
+        {
+          text: t.deleteExercise,
+          style: 'destructive',
+          onPress: async () => {
+            await deleteExercise(user!.uid, existing!.id);
+            router.back();
+          },
+        },
+      ],
+    );
   }
 
   const units: { id: Unit; label: string; desc: string }[] = [
@@ -67,7 +88,6 @@ export default function AddExerciseScreen() {
       style={[styles.flex, { backgroundColor: colors.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity
           style={[styles.backBtn, { borderColor: colors.line }]}
@@ -75,8 +95,16 @@ export default function AddExerciseScreen() {
         >
           <Icon name="chevLeft" size={14} stroke={colors.ink2} sw={2} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.ink }]}>{t.addExerciseTitle}</Text>
-        <View style={{ width: 36 }} />
+        <Text style={[styles.headerTitle, { color: colors.ink }]}>
+          {isEdit ? t.editExercise : t.addExerciseTitle}
+        </Text>
+        {isEdit ? (
+          <TouchableOpacity onPress={handleDelete}>
+            <Icon name="trash" size={20} stroke={colors.danger} sw={1.8} />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 36 }} />
+        )}
       </View>
 
       <ScrollView
@@ -115,7 +143,7 @@ export default function AddExerciseScreen() {
           onChangeText={setName}
           placeholder={t.exerciseName}
           placeholderTextColor={colors.ink2}
-          autoFocus
+          autoFocus={!isEdit}
         />
 
         {/* Icon */}
@@ -162,14 +190,10 @@ export default function AddExerciseScreen() {
                 onPress={() => setUnit(u.id)}
               >
                 <View style={styles.unitInfo}>
-                  <Text style={[styles.unitLabel, {
-                    color: active ? colors.accentInk : colors.ink,
-                  }]}>
+                  <Text style={[styles.unitLabel, { color: active ? colors.accentInk : colors.ink }]}>
                     {u.label}
                   </Text>
-                  <Text style={[styles.unitDesc, {
-                    color: active ? colors.accentInk : colors.ink2,
-                  }]}>
+                  <Text style={[styles.unitDesc, { color: active ? colors.accentInk : colors.ink2 }]}>
                     {u.desc}
                   </Text>
                 </View>
@@ -196,13 +220,9 @@ export default function AddExerciseScreen() {
                   styles.colorDot,
                   { backgroundColor: c },
                   active && {
-                    borderWidth: 3,
-                    borderColor: colors.bg,
-                    shadowColor: c,
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 1,
-                    shadowRadius: 4,
-                    elevation: 4,
+                    borderWidth: 3, borderColor: colors.bg,
+                    shadowColor: c, shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 1, shadowRadius: 4, elevation: 4,
                   },
                 ]}
                 onPress={() => setColor(c)}
@@ -266,8 +286,8 @@ export default function AddExerciseScreen() {
         </View>
 
         <Button
-          label={t.createExercise}
-          onPress={handleCreate}
+          label={isEdit ? t.saveChanges : t.createExercise}
+          onPress={handleSave}
           loading={saving}
           disabled={!name.trim()}
           style={{ marginTop: 32 }}
@@ -280,78 +300,38 @@ export default function AddExerciseScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 24, paddingBottom: 16,
   },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1, alignItems: 'center', justifyContent: 'center',
-  },
+  backBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 15, fontWeight: '600' },
   content: { paddingHorizontal: 24, paddingTop: 8 },
-  preview: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    padding: 16, borderRadius: 16, marginTop: 8, marginBottom: 28,
-  },
-  previewIcon: {
-    width: 56, height: 56, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  preview: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16, marginTop: 8, marginBottom: 28 },
+  previewIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   previewIconText: { fontSize: 28 },
   previewInfo: { flex: 1 },
   previewTag: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   previewName: { fontSize: 18, fontWeight: '600', marginTop: 2 },
   previewMeta: { fontSize: 12, marginTop: 2, opacity: 0.85 },
-  nameInput: {
-    borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '500',
-    marginTop: 10, marginBottom: 28,
-  },
-  iconGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
-    marginTop: 10, marginBottom: 28,
-  },
-  iconCell: {
-    width: '14%', aspectRatio: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  nameInput: { borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '500', marginTop: 10, marginBottom: 28 },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
+  iconCell: { width: '14%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 22 },
   unitList: { gap: 8, marginTop: 10, marginBottom: 28 },
-  unitRow: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 14, borderRadius: 12,
-  },
+  unitRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12 },
   unitInfo: { flex: 1 },
   unitLabel: { fontSize: 15, fontWeight: '600' },
   unitDesc: { fontSize: 12, marginTop: 2, opacity: 0.8 },
-  radio: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 1.5, alignItems: 'center', justifyContent: 'center',
-  },
-  colorRow: {
-    flexDirection: 'row', gap: 10,
-    marginTop: 10, marginBottom: 28,
-  },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  colorRow: { flexDirection: 'row', gap: 10, marginTop: 10, marginBottom: 28 },
   colorDot: { width: 40, height: 40, borderRadius: 20 },
-  muscleGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
-    marginTop: 10, marginBottom: 28,
-  },
+  muscleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
   musclePill: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 18 },
   musclePillText: { fontSize: 13 },
-  goalRow: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 14, borderRadius: 12, borderWidth: 1,
-    marginTop: 10, marginBottom: 0,
-  },
+  goalRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 10 },
   goalValue: { fontSize: 17, fontWeight: '500' },
   goalUnit: { fontSize: 14, marginLeft: 6 },
   goalBtns: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
-  goalBtn: {
-    width: 32, height: 32, borderRadius: 16, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  goalBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   goalBtnText: { fontSize: 16, lineHeight: 20 },
 });

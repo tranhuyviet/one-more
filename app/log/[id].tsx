@@ -26,19 +26,28 @@ export default function LogScreen() {
   const exercises = useExerciseStore(s => s.exercises);
   const { todayLogs, addLog } = useLogStore();
 
-  const exercise = exercises.find(e => e.id === id);
+  const [activeId, setActiveId] = useState(id);
   const [value, setValue] = useState(10);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showSwitch, setShowSwitch] = useState(false);
+
+  const exercise = exercises.find(e => e.id === activeId);
 
   if (!exercise) return null;
 
   const todayExLogs = todayLogs
-    .filter(l => l.exerciseId === id)
+    .filter(l => l.exerciseId === activeId)
     .sort((a, b) => a.loggedAt - b.loggedAt);
-
   const todayTotal = todayExLogs.reduce((s, l) => s + l.value, 0);
   const quickValues = QUICK_PICK_VALUES[exercise.unit];
+
+  function switchExercise(newId: string) {
+    setActiveId(newId);
+    setValue(10);
+    setNote('');
+    setShowSwitch(false);
+  }
 
   async function handleSave() {
     if (!user) return;
@@ -75,24 +84,23 @@ export default function LogScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Exercise row */}
+        {/* Exercise selector */}
         <SectionLabel label="Bài tập" />
-        <View style={{ marginTop: 10, marginBottom: 28 }}>
-          <TouchableOpacity
-            style={[styles.exRow, { borderBottomColor: colors.line }]}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.exIcon}>{exercise.icon}</Text>
-            <Text style={[styles.exName, { color: colors.ink }]}>{exercise.name}</Text>
-            <Icon name="chev" size={16} stroke={colors.ink2} sw={1.6} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.exRow, { borderBottomColor: colors.line }]}
+          onPress={() => setShowSwitch(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.exIcon}>{exercise.icon}</Text>
+          <Text style={[styles.exName, { color: colors.ink }]}>{exercise.name}</Text>
+          <Icon name="chev" size={16} stroke={colors.ink2} sw={1.6} />
+        </TouchableOpacity>
 
         {/* Reps counter */}
-        <SectionLabel label={exercise.unit === 'reps' ? t.repsLabel : exercise.unit === 'duration' ? t.durationLabel : t.distanceLabel} />
+        <View style={{ marginTop: 28 }}>
+          <SectionLabel label={exercise.unit === 'reps' ? t.repsLabel : exercise.unit === 'duration' ? t.durationLabel : t.distanceLabel} />
+        </View>
         <View style={[styles.counter, { borderBottomColor: colors.line }]}>
-          {/* Minus */}
           <TouchableOpacity
             style={[styles.counterBtn, { borderColor: colors.line, backgroundColor: colors.card }]}
             onPress={() => setValue(v => Math.max(0, v - 1))}
@@ -100,16 +108,12 @@ export default function LogScreen() {
           >
             <Text style={[styles.counterBtnText, { color: colors.ink }]}>−</Text>
           </TouchableOpacity>
-
-          {/* Value */}
           <View style={styles.counterValue}>
             <Text style={[styles.bigNumber, { color: colors.ink }]}>{value}</Text>
             <Text style={[styles.unitLabel, { color: colors.ink2 }]}>
               {exercise.unit === 'reps' ? t.reps : exercise.unit === 'duration' ? t.seconds : t.km}
             </Text>
           </View>
-
-          {/* Plus */}
           <TouchableOpacity
             style={[styles.counterBtn, { backgroundColor: colors.accent }]}
             onPress={() => setValue(v => v + 1)}
@@ -120,7 +124,9 @@ export default function LogScreen() {
         </View>
 
         {/* Quick pick */}
-        <SectionLabel label={t.quickPick} />
+        <View style={{ marginTop: 28 }}>
+          <SectionLabel label={t.quickPick} />
+        </View>
         <View style={styles.quickGrid}>
           {quickValues.map(v => {
             const active = v === value;
@@ -151,7 +157,9 @@ export default function LogScreen() {
         </View>
 
         {/* Notes */}
-        <SectionLabel label={t.notes} />
+        <View style={{ marginTop: 28 }}>
+          <SectionLabel label={t.notes} />
+        </View>
         <TextInput
           style={[styles.noteInput, { borderColor: colors.line, color: colors.ink }]}
           value={note}
@@ -161,13 +169,7 @@ export default function LogScreen() {
           multiline
         />
 
-        {/* Save button */}
-        <Button
-          label={t.save}
-          onPress={handleSave}
-          loading={saving}
-          style={{ marginTop: 20 }}
-        />
+        <Button label={t.save} onPress={handleSave} loading={saving} style={{ marginTop: 20 }} />
 
         {/* Today's sets */}
         {todayExLogs.length > 0 && (
@@ -196,17 +198,51 @@ export default function LogScreen() {
                   note={log.note}
                   unit={exercise.unit}
                   isLast={i === todayExLogs.length - 1}
-                  accentColors={{
-                    bg: colors.accentLine,
-                    text: colors.accentInk,
-                    border: colors.accentLine,
-                  }}
+                  accentColors={{ bg: colors.accentLine, text: colors.accentInk, border: colors.accentLine }}
                 />
               );
             })}
           </View>
         )}
       </ScrollView>
+
+      {/* Exercise switcher overlay */}
+      {showSwitch && (
+        <View style={StyleSheet.absoluteFillObject}>
+          <TouchableOpacity
+            style={styles.switchBackdrop}
+            onPress={() => setShowSwitch(false)}
+            activeOpacity={1}
+          />
+          <View style={[styles.switchSheet, { backgroundColor: colors.bg, paddingBottom: insets.bottom + 16 }]}>
+            <View style={[styles.switchHandle, { backgroundColor: colors.line }]} />
+            <Text style={[styles.switchTitle, { color: colors.ink2 }]}>
+              {t.switchExercise.toUpperCase()}
+            </Text>
+            {exercises.map((ex, i) => {
+              const isActive = ex.id === activeId;
+              return (
+                <TouchableOpacity
+                  key={ex.id}
+                  style={[
+                    styles.switchRow,
+                    { borderTopColor: colors.line },
+                    i === exercises.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+                  ]}
+                  onPress={() => switchExercise(ex.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.switchIcon}>{ex.icon}</Text>
+                  <Text style={[styles.switchName, { color: isActive ? colors.accent : colors.ink }]}>
+                    {ex.name}
+                  </Text>
+                  {isActive && <Icon name="check" size={16} stroke={colors.accent} sw={2.5} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -214,82 +250,56 @@ export default function LogScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 24, paddingBottom: 16,
   },
   headerTitle: { fontSize: 15, fontWeight: '500' },
   content: { paddingHorizontal: 24, paddingTop: 8 },
   exRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 0,
   },
   exIcon: { fontSize: 22, marginRight: 12 },
   exName: { flex: 1, fontSize: 17, fontWeight: '500' },
   counter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    marginTop: 10,
-    marginBottom: 28,
-    gap: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth,
+    marginTop: 10, marginBottom: 0, gap: 12,
   },
   counterBtn: {
     width: 64, height: 64, borderRadius: 32,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5,
   },
   counterBtnText: { fontSize: 32, fontWeight: '300', lineHeight: 36 },
   counterValue: { flex: 1, alignItems: 'center' },
   bigNumber: { fontSize: 88, fontWeight: '300', letterSpacing: -4, lineHeight: 88 },
   unitLabel: { fontSize: 13, marginTop: 4, letterSpacing: 0.4 },
-  quickGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 10,
-    marginBottom: 28,
-  },
-  quickPill: {
-    width: '30%',
-    flexGrow: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 0 },
+  quickPill: { width: '30%', flexGrow: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   quickText: { fontSize: 16, fontWeight: '500' },
   noteInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    fontStyle: 'italic',
-    minHeight: 56,
-    marginTop: 10,
+    borderWidth: 1, borderRadius: 12, padding: 14,
+    fontSize: 15, fontStyle: 'italic', minHeight: 56, marginTop: 10,
   },
-  todayCard: {
-    marginTop: 24,
-    padding: 16,
-    borderRadius: 14,
-  },
-  todayHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  todayTitle: {
-    fontSize: 11,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    fontWeight: '700',
-  },
+  todayCard: { marginTop: 24, padding: 16, borderRadius: 14 },
+  todayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  todayTitle: { fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '700' },
   todaySets: { fontSize: 13, opacity: 0.75 },
   todayTotal: { fontSize: 15, marginTop: 6, marginBottom: 10 },
+
+  // Switcher
+  switchBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)' },
+  switchSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingTop: 12, paddingHorizontal: 24,
+  },
+  switchHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  switchTitle: { fontSize: 11, fontWeight: '600', letterSpacing: 1, marginBottom: 8 },
+  switchRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  switchIcon: { fontSize: 22, marginRight: 14 },
+  switchName: { flex: 1, fontSize: 17, fontWeight: '500' },
 });

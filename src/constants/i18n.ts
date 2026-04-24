@@ -65,6 +65,11 @@ const vi = {
   dailyGoalLabel: 'Mục tiêu hàng ngày',
   dailyGoalOpt: 'tuỳ chọn',
   createExercise: 'Tạo bài tập',
+  editExercise: 'Sửa bài tập',
+  saveChanges: 'Lưu thay đổi',
+  deleteExercise: 'Xóa bài tập',
+  deleteExerciseConfirm: 'Bài tập này sẽ bị xóa vĩnh viễn. Dữ liệu log vẫn được giữ lại.',
+  switchExercise: 'Đổi bài tập',
   preview: 'Xem trước',
 
   // Units options
@@ -120,9 +125,9 @@ const vi = {
   weekLabel: 'Tuần',
 
   // Home screen
-  greeting: 'Chào buổi sáng',
-  greetingAfternoon: 'Chào buổi chiều',
-  greetingEvening: 'Chào buổi tối',
+  greeting: 'Xin chào',
+  greetingAfternoon: 'Xin chào',
+  greetingEvening: 'Xin chào',
   streak: 'Chuỗi ngày',
   personalBest: 'Kỷ lục',
   noData: 'Chưa có dữ liệu',
@@ -220,6 +225,11 @@ const en: typeof vi = {
   dailyGoalLabel: 'Daily goal',
   dailyGoalOpt: 'optional',
   createExercise: 'Create exercise',
+  editExercise: 'Edit exercise',
+  saveChanges: 'Save changes',
+  deleteExercise: 'Delete exercise',
+  deleteExerciseConfirm: 'This exercise will be permanently deleted. Log data will be kept.',
+  switchExercise: 'Change exercise',
   preview: 'Preview',
 
   unitReps: 'Reps',
@@ -269,9 +279,9 @@ const en: typeof vi = {
   noWorkout: '— rest day —',
   weekLabel: 'Week',
 
-  greeting: 'Good morning',
-  greetingAfternoon: 'Good afternoon',
-  greetingEvening: 'Good evening',
+  greeting: 'Hello',
+  greetingAfternoon: 'Hello',
+  greetingEvening: 'Hello',
   streak: 'Streak',
   personalBest: 'Personal best',
   noData: 'No data yet',

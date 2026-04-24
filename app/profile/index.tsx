@@ -3,11 +3,13 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Alert, Switch,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileStore } from '@/store/useProfileStore';
+import { useExerciseStore } from '@/store/useExerciseStore';
 import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
@@ -52,12 +54,14 @@ function Row({ label, icon, value, action, onPress, danger, isLast, colors }: Ro
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const user = useAuthStore(s => s.user);
   const profile = useProfileStore(s => s.profile);
   const { updateName, updateLanguage, toggleDarkMode } = useProfileStore();
+  const exercises = useExerciseStore(s => s.exercises);
 
   const [name, setName] = useState(profile?.name ?? '');
   const [editingName, setEditingName] = useState(false);
@@ -191,6 +195,42 @@ export default function ProfileScreen() {
             />
           }
         />
+
+        {/* Exercises */}
+        <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
+          {t.myExercises.toUpperCase()}
+        </Text>
+        {exercises.map((ex, i) => (
+          <TouchableOpacity
+            key={ex.id}
+            style={[styles.row, {
+              borderBottomColor: colors.line,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+            }]}
+            onPress={() => router.push(`/exercises/add?id=${ex.id}`)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: `${ex.color}18` }]}>
+              <Text style={styles.rowIconText}>{ex.icon}</Text>
+            </View>
+            <Text style={[styles.rowLabel, { color: colors.ink, flex: 1 }]}>{ex.name}</Text>
+            <Text style={[styles.rowValue, { color: colors.ink2 }]}>
+              {ex.unit === 'reps' ? t.reps : ex.unit === 'duration' ? t.seconds : t.km}
+            </Text>
+            <Icon name="chev" size={14} stroke={colors.ink2} sw={1.6} />
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[styles.row, { borderBottomWidth: 0 }]}
+          onPress={() => router.push('/exercises/add')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.rowIcon, { backgroundColor: colors.accentSoft }]}>
+            <Icon name="plus" size={14} stroke={colors.accent} sw={2} />
+          </View>
+          <Text style={[styles.rowLabel, { color: colors.accent }]}>{t.addExercise}</Text>
+          <Icon name="chev" size={14} stroke={colors.ink2} sw={1.6} />
+        </TouchableOpacity>
 
         {/* Data */}
         <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
