@@ -17,22 +17,6 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     muscleGroup: 'Cardio',
     sortOrder: 1,
   },
-  {
-    name: 'Squat',
-    icon: '🦵',
-    unit: 'reps',
-    color: '#8B4CB8',
-    muscleGroup: 'Chân',
-    sortOrder: 2,
-  },
-  {
-    name: 'Plank',
-    icon: '⏱️',
-    unit: 'duration',
-    color: '#C55A3A',
-    muscleGroup: 'Bụng',
-    sortOrder: 3,
-  },
 ];
 
 export const EXERCISE_ICON_OPTIONS = [
