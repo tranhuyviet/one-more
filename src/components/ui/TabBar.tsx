@@ -37,7 +37,7 @@ export default function TabBar() {
     }]}>
       {TABS.map(tab => {
         const active = isActive(tab.href);
-        const color = active ? colors.ink : colors.ink2;
+        const color = active ? colors.accent : colors.ink2;
 
         if (tab.big) {
           return (
@@ -61,8 +61,8 @@ export default function TabBar() {
             onPress={() => router.push(tab.href as any)}
             activeOpacity={0.7}
           >
-            <Icon name={tab.icon} size={22} stroke={color} sw={1.8} />
-            <Text style={[styles.label, { color }]}>{t[tab.labelKey]}</Text>
+            <Icon name={tab.icon} size={22} stroke={color} sw={active ? 2.2 : 1.8} />
+            <Text style={[styles.label, { color, fontWeight: active ? '700' : '500' }]}>{t[tab.labelKey]}</Text>
           </TouchableOpacity>
         );
       })}

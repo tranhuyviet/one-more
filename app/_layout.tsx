@@ -45,15 +45,15 @@ export default function RootLayout() {
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
+        <Stack.Screen name="index" options={{ animation: 'none' }} />
+        <Stack.Screen name="welcome" options={{ animation: 'none' }} />
         <Stack.Screen name="exercises/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="exercises/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="log/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="log/picker" options={{ presentation: 'transparentModal', animation: 'fade' }} />
-        <Stack.Screen name="history/index" />
-        <Stack.Screen name="stats/index" />
-        <Stack.Screen name="profile/index" />
+        <Stack.Screen name="log/picker" options={{ presentation: 'transparentModal', animation: 'none' }} />
+        <Stack.Screen name="history/index" options={{ animation: 'none' }} />
+        <Stack.Screen name="stats/index" options={{ animation: 'none' }} />
+        <Stack.Screen name="profile/index" options={{ animation: 'none' }} />
       </Stack>
       {!isReady && <SplashOverlay />}
     </>
