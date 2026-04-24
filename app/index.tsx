@@ -132,6 +132,8 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.bg }]}>
+      {/* Covers content that scrolls into the status bar area */}
+      <View style={[styles.statusBarCover, { height: insets.top, backgroundColor: colors.bg }]} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -275,6 +277,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  statusBarCover: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    zIndex: 10,
+  },
   content: { paddingHorizontal: 24 },
 
   greeting: {
