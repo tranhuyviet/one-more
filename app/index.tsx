@@ -67,6 +67,24 @@ export default function HomeScreen() {
     loadWeekData();
   }, [user, profile]);
 
+  useEffect(() => {
+    if (Object.keys(weekData).length === 0) return;
+    const todayIdx = ((new Date().getDay() + 6) % 7);
+    const todayTotals: Record<string, number> = {};
+    todayLogs.forEach(log => {
+      todayTotals[log.exerciseId] = (todayTotals[log.exerciseId] ?? 0) + log.value;
+    });
+    setWeekData(prev => {
+      const next: Record<string, number[]> = {};
+      Object.keys(prev).forEach(exId => {
+        const updated = [...prev[exId]];
+        updated[todayIdx] = todayTotals[exId] ?? 0;
+        next[exId] = updated;
+      });
+      return next;
+    });
+  }, [todayLogs]);
+
   async function loadWeekData() {
     if (!user) return;
     const weekDates = getWeekDates(new Date());
