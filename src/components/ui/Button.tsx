@@ -1,11 +1,15 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator, View } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import Icon from '@/components/ui/Icon';
+
+type IconName = React.ComponentProps<typeof Icon>['name'];
 
 interface ButtonProps {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
+  icon?: IconName;
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -16,6 +20,7 @@ export default function Button({
   label,
   onPress,
   variant = 'primary',
+  icon,
   loading = false,
   disabled = false,
   style,
@@ -60,6 +65,12 @@ export default function Button({
     ...(variant === 'danger' && { color: '#fff' }),
   };
 
+  const iconColor =
+    variant === 'primary' ? (isDark ? colors.bg : '#fff') :
+    variant === 'danger' ? '#fff' :
+    variant === 'outline' ? colors.ink :
+    colors.ink2;
+
   return (
     <TouchableOpacity
       style={[containerStyle, style]}
@@ -68,9 +79,12 @@ export default function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.accent} />
+        <ActivityIndicator color={variant === 'primary' || variant === 'danger' ? '#fff' : colors.accent} />
       ) : (
-        <Text style={[labelStyle, textStyle]}>{label}</Text>
+        <View style={styles.content}>
+          {icon && <Icon name={icon} size={18} stroke={iconColor} sw={2.2} />}
+          <Text style={[labelStyle, textStyle]}>{label}</Text>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -82,6 +96,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   label: {
     fontSize: 16,

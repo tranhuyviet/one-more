@@ -255,6 +255,7 @@ export default function AddExerciseScreen() {
 
         <Button
           label={isEdit ? t.saveChanges : t.createExercise}
+          icon={isEdit ? 'check' : 'plus'}
           onPress={handleSave}
           loading={saving}
           disabled={!name.trim()}
@@ -263,6 +264,7 @@ export default function AddExerciseScreen() {
         {isEdit && (
           <Button
             label={t.deleteExercise}
+            icon="trash"
             variant="danger"
             onPress={handleDelete}
             style={{ marginTop: 24 }}
