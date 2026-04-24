@@ -25,18 +25,20 @@ export default function WeekGrid({ rows, todayIndex = 6 }: WeekGridProps) {
       {/* Header row */}
       <View style={styles.headerRow}>
         <View style={styles.labelCol} />
-        {weekDays.map((d, i) => (
-          <Text
-            key={i}
-            style={[
-              styles.dayLabel,
-              { color: i === todayIndex ? colors.ink : colors.ink2 },
-              i === todayIndex && styles.dayLabelToday,
-            ]}
-          >
-            {d}
-          </Text>
-        ))}
+        {weekDays.map((d, i) => {
+          const isToday = i === todayIndex;
+          return (
+            <View key={i} style={styles.dayCell}>
+              {isToday ? (
+                <View style={[styles.todayBadge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.todayBadgeText}>{d}</Text>
+                </View>
+              ) : (
+                <Text style={[styles.dayLabel, { color: colors.ink2 }]}>{d}</Text>
+              )}
+            </View>
+          );
+        })}
       </View>
 
       {/* Data rows */}
@@ -111,15 +113,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flexShrink: 1,
   },
-  dayLabel: {
+  dayCell: {
     flex: 1,
+    alignItems: 'center',
+  },
+  dayLabel: {
     fontSize: 10,
-    textAlign: 'center',
     fontWeight: '500',
     letterSpacing: 0.3,
   },
-  dayLabelToday: {
+  todayBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayBadgeText: {
+    fontSize: 9,
     fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.2,
   },
   dataRow: {
     flexDirection: 'row',

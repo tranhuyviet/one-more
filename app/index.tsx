@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useExerciseStore } from '@/store/useExerciseStore';
 import { useLogStore } from '@/store/useLogStore';
+import { Unit } from '@/types';
 import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
 import WeekGrid from '@/components/charts/WeekGrid';
@@ -22,6 +23,36 @@ function getGreeting(t: ReturnType<typeof useTranslation>['t']): string {
   if (h < 12) return t.greeting;
   if (h < 18) return t.greetingAfternoon;
   return t.greetingEvening;
+}
+
+function getISOWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+function formatDateLabel(date: Date, lang: string): string {
+  const days_vi = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  const days_en = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const name = lang === 'en' ? days_en[date.getDay()] : days_vi[date.getDay()];
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${name}, ${dd}.${mm}.${yyyy}`;
+}
+
+function getWeekLabel(date: Date, lang: string): string {
+  const w = getISOWeek(date);
+  const y = date.getFullYear();
+  return lang === 'en' ? `Week ${w} · ${y}` : `Tuần ${w} · ${y}`;
+}
+
+function getUnitLabel(unit: Unit, t: ReturnType<typeof useTranslation>['t']): string {
+  if (unit === 'reps') return t.reps;
+  if (unit === 'duration') return t.seconds;
+  return t.km;
 }
 
 export default function HomeScreen() {
@@ -78,7 +109,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Aggregate today's stats per exercise
   const todayByEx = todayLogs.reduce<Record<string, { total: number; sets: number; logs: typeof todayLogs }>>((acc, log) => {
     if (!acc[log.exerciseId]) acc[log.exerciseId] = { total: 0, sets: 0, logs: [] };
     acc[log.exerciseId].total += log.value;
@@ -87,12 +117,10 @@ export default function HomeScreen() {
     return acc;
   }, {});
 
-  const weekDayIndex = ((new Date().getDay() + 6) % 7); // 0=Mon, 6=Sun
+  const weekDayIndex = ((new Date().getDay() + 6) % 7);
 
   const today = new Date();
-  const dateLabel = today.toLocaleDateString(profile?.language === 'en' ? 'en-GB' : 'vi-VN', {
-    weekday: 'long', day: '2-digit', month: '2-digit',
-  });
+  const lang = profile?.language ?? 'vi';
 
   const weekGridRows = exercises
     .filter(ex => weekData[ex.id])
@@ -107,117 +135,117 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_HEIGHT + 24 },
+          { paddingTop: insets.top + 20, paddingBottom: TAB_BAR_HEIGHT + 24 },
         ]}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.dateText, { color: colors.ink2 }]}>{dateLabel}</Text>
-            <Text style={[styles.greeting, { color: colors.ink }]}>
-              {getGreeting(t)}, {profile?.name ?? ''}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.settingsBtn, { borderColor: colors.line }]}
-            onPress={() => router.push('/profile')}
-          >
-            <Icon name="settings" size={16} stroke={colors.ink2} sw={1.6} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Today section */}
-        <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
-          {t.today.toUpperCase()}
+        {/* Greeting */}
+        <Text style={[styles.greeting, { color: colors.ink }]}>
+          {getGreeting(t)}, {profile?.name ?? ''} 👋
         </Text>
 
+        {/* Today section */}
+        <View style={styles.sectionRow}>
+          <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
+            {t.today.toUpperCase()}
+          </Text>
+          <Text style={[styles.sectionDate, { color: colors.ink2 }]}>
+            {formatDateLabel(today, lang)}
+          </Text>
+        </View>
+
         {exercises.length === 0 ? (
-          <View style={[styles.emptyCard, { borderColor: colors.line }]}>
+          <View style={[styles.emptyCard, { borderColor: colors.line, marginBottom: 36 }]}>
             <Text style={[styles.emptyText, { color: colors.ink2 }]}>{t.noData}</Text>
-            <Text style={[styles.emptyLink, { color: colors.accent }]}>
-              {t.startNow}
-            </Text>
+            <Text style={[styles.emptyLink, { color: colors.accent }]}>{t.startNow}</Text>
           </View>
         ) : (
-          <View style={{ marginBottom: 36 }}>
+          <View style={styles.exerciseList}>
             {exercises.map((ex, i) => {
               const stats = todayByEx[ex.id];
-              const isExpanded = expanded === ex.id;
-              const isLast = i === exercises.length - 1;
+              const isExp = expanded === ex.id;
               const total = stats?.total ?? 0;
+              const unitStr = getUnitLabel(ex.unit as Unit, t);
+              const isLast = i === exercises.length - 1;
+
+              if (isExp) {
+                return (
+                  <View key={ex.id} style={[styles.exCard, { backgroundColor: colors.accentSoft }]}>
+                    <TouchableOpacity
+                      style={styles.exCardHeader}
+                      onPress={() => setExpanded(null)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.exIcon}>{ex.icon}</Text>
+                      <View style={styles.exInfo}>
+                        <Text style={[styles.exName, { color: colors.accentInk, fontWeight: '600' }]}>
+                          {ex.name}
+                        </Text>
+                        {stats && (
+                          <Text style={[styles.exSets, { color: colors.accent }]}>
+                            {stats.sets} {t.sets}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={styles.exValueWrap}>
+                        <Text style={[styles.exTotal, { color: colors.accentInk }]}>{total}</Text>
+                        <Text style={[styles.exUnit, { color: colors.accent }]}>{unitStr}</Text>
+                      </View>
+                      <View style={[styles.chevWrap, { transform: [{ rotate: '90deg' }] }]}>
+                        <Icon name="chev" size={13} stroke={colors.accent} sw={2} />
+                      </View>
+                    </TouchableOpacity>
+
+                    {stats && stats.logs.length > 0 && (
+                      <>
+                        <View style={[styles.cardDivider, { backgroundColor: colors.accentLine }]} />
+                        <View style={styles.exCardDetail}>
+                          {stats.logs.map((log, j) => {
+                            const logTime = new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            return (
+                              <SetRow
+                                key={log.id}
+                                index={j}
+                                time={logTime}
+                                value={log.value}
+                                note={log.note}
+                                unit={ex.unit as Unit}
+                                isLast={j === stats.logs.length - 1}
+                                accentColors={{
+                                  bg: colors.accentLine,
+                                  text: colors.accentInk,
+                                  border: colors.accentLine,
+                                }}
+                              />
+                            );
+                          })}
+                        </View>
+                      </>
+                    )}
+                  </View>
+                );
+              }
 
               return (
-                <React.Fragment key={ex.id}>
-                  <TouchableOpacity
-                    style={[
-                      styles.exRow,
-                      {
-                        borderTopColor: colors.line,
-                        borderBottomColor: (!isExpanded && isLast) ? colors.line : 'transparent',
-                        borderBottomWidth: (!isExpanded && isLast) ? StyleSheet.hairlineWidth : 0,
-                        backgroundColor: isExpanded ? colors.accentSoft : 'transparent',
-                        marginHorizontal: isExpanded ? -16 : 0,
-                        paddingHorizontal: isExpanded ? 16 : 0,
-                        borderRadius: isExpanded ? 12 : 0,
-                      },
-                    ]}
-                    onPress={() => setExpanded(isExpanded ? null : ex.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.exIcon}>{ex.icon}</Text>
-                    <View style={styles.exInfo}>
-                      <Text style={[styles.exName, {
-                        color: isExpanded ? colors.accentInk : colors.ink,
-                      }]}>
-                        {ex.name}
-                      </Text>
-                      {isExpanded && stats && (
-                        <Text style={[styles.exSets, { color: colors.accent }]}>
-                          {stats.sets} {t.sets}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.exValue}>
-                      <Text style={[styles.exTotal, {
-                        color: isExpanded ? colors.accentInk : colors.ink,
-                      }]}>
-                        {total}
-                      </Text>
-                      <Text style={[styles.exUnit, {
-                        color: isExpanded ? colors.accent : colors.ink2,
-                      }]}>
-                        {ex.unit === 'reps' ? t.reps : ex.unit === 'duration' ? t.seconds : t.km}
-                      </Text>
-                    </View>
-                    <View style={{ marginLeft: 10, transform: [{ rotate: isExpanded ? '90deg' : '0deg' }] }}>
-                      <Icon name="chev" size={13} stroke={isExpanded ? colors.accent : colors.ink2} sw={2} />
-                    </View>
-                  </TouchableOpacity>
-
-                  {isExpanded && stats && (
-                    <View style={[styles.detailContainer, { backgroundColor: colors.accentSoft, marginHorizontal: -16 }]}>
-                      {stats.logs.map((log, j) => {
-                        const logTime = new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        return (
-                          <SetRow
-                            key={log.id}
-                            index={j}
-                            time={logTime}
-                            value={log.value}
-                            note={log.note}
-                            unit={ex.unit}
-                            isLast={j === stats.logs.length - 1}
-                            accentColors={{
-                              bg: colors.accentLine,
-                              text: colors.accentInk,
-                              border: colors.accentLine,
-                            }}
-                          />
-                        );
-                      })}
-                    </View>
-                  )}
-                </React.Fragment>
+                <TouchableOpacity
+                  key={ex.id}
+                  style={[
+                    styles.exRow,
+                    { borderTopColor: colors.line },
+                    isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+                  ]}
+                  onPress={() => setExpanded(ex.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.exIcon}>{ex.icon}</Text>
+                  <Text style={[styles.exName, { color: colors.ink, flex: 1 }]}>{ex.name}</Text>
+                  <View style={styles.exValueWrap}>
+                    <Text style={[styles.exTotal, { color: colors.ink }]}>{total}</Text>
+                    <Text style={[styles.exUnit, { color: colors.ink2 }]}>{unitStr}</Text>
+                  </View>
+                  <View style={styles.chevWrap}>
+                    <Icon name="chev" size={13} stroke={colors.ink2} sw={2} />
+                  </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -226,32 +254,17 @@ export default function HomeScreen() {
         {/* Weekly breakdown */}
         {weekGridRows.length > 0 && (
           <>
-            <Text style={[styles.sectionLabel, { color: colors.ink2, marginBottom: 14 }]}>
-              {t.thisWeek.toUpperCase()}
-            </Text>
+            <View style={[styles.sectionRow, { marginTop: 4 }]}>
+              <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
+                {t.thisWeek.toUpperCase()}
+              </Text>
+              <Text style={[styles.sectionDate, { color: colors.ink2 }]}>
+                {getWeekLabel(today, lang)}
+              </Text>
+            </View>
             <WeekGrid rows={weekGridRows} todayIndex={weekDayIndex} />
           </>
         )}
-
-        {/* Streak + Best */}
-        <View style={[styles.statGrid, { marginTop: 32 }]}>
-          <View style={[styles.statCell, { borderTopColor: colors.line }]}>
-            <Text style={[styles.statLabel, { color: colors.ink2 }]}>
-              {t.streak.toUpperCase()}
-            </Text>
-            <Text style={[styles.statValue, { color: colors.ink }]}>
-              0<Text style={[styles.statUnit, { color: colors.ink2 }]}> ngày</Text>
-            </Text>
-          </View>
-          <View style={[styles.statCell, { borderTopColor: colors.line }]}>
-            <Text style={[styles.statLabel, { color: colors.ink2 }]}>
-              {t.personalBest.toUpperCase()}
-            </Text>
-            <Text style={[styles.statValue, { color: colors.ink }]}>
-              —
-            </Text>
-          </View>
-        </View>
       </ScrollView>
 
       <TabBar />
@@ -263,58 +276,74 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 24 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+
+  greeting: {
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.4,
     marginBottom: 32,
   },
-  dateText: { fontSize: 13, letterSpacing: 0.3 },
-  greeting: { fontSize: 22, fontWeight: '500', marginTop: 4, letterSpacing: -0.4 },
-  settingsBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
+
+  sectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 14,
   },
   sectionLabel: {
-    fontSize: 11, fontWeight: '600', letterSpacing: 1, marginBottom: 14,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
   },
+  sectionDate: {
+    fontSize: 13,
+  },
+
   emptyCard: {
     padding: 24, borderWidth: 1, borderRadius: 12,
-    alignItems: 'center', gap: 8, marginBottom: 36,
+    alignItems: 'center', gap: 8,
   },
   emptyText: { fontSize: 15 },
   emptyLink: { fontSize: 14, fontWeight: '600' },
+
+  exerciseList: { marginBottom: 36 },
+
+  // Expanded card
+  exCard: {
+    borderRadius: 14,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  exCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  cardDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 16,
+  },
+  exCardDetail: {
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
+
+  // Collapsed row
   exRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
+
+  // Shared
   exIcon: { fontSize: 20, marginRight: 12, lineHeight: 24 },
   exInfo: { flex: 1 },
   exName: { fontSize: 15, fontWeight: '500' },
   exSets: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, marginTop: 3 },
-  exValue: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  exValueWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   exTotal: { fontSize: 32, fontWeight: '300', letterSpacing: -1, lineHeight: 36 },
   exUnit: { fontSize: 12, marginBottom: 2 },
-  detailContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    paddingTop: 2,
-    borderRadius: 12,
-    marginBottom: 0,
-  },
-  statGrid: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  statCell: {
-    flex: 1,
-    borderTopWidth: 1,
-    paddingTop: 14,
-  },
-  statLabel: { fontSize: 11, letterSpacing: 0.5 },
-  statValue: { fontSize: 32, fontWeight: '400', marginTop: 4, letterSpacing: -0.5 },
-  statUnit: { fontSize: 14, fontWeight: '400' },
+  chevWrap: { marginLeft: 10 },
 });
