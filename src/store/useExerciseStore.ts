@@ -21,7 +21,12 @@ export const useExerciseStore = create<ExerciseState>((set, get) => ({
   loading: true,
 
   loadExercises: async (userId) => {
-    const exercises = await getExercises(userId);
+    let exercises = await getExercises(userId);
+    if (exercises.length === 0) {
+      const pushup = DEFAULT_EXERCISES[0];
+      await seedDefaultExercises(userId, [{ ...pushup, createdAt: Date.now() }]);
+      exercises = await getExercises(userId);
+    }
     set({ exercises, loading: false });
   },
 

@@ -38,7 +38,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
 export const EXERCISE_ICON_OPTIONS = [
   '💪', '🏋️', '🦵', '🔥', '⚡', '🏃',
   '🚴', '🧘', '🤸', '🏊', '⏱️', '🚶',
-  '🥊', '🏊', '🧗', '🤼', '🏇', '🎾',
+  '🥊', '🧗', '🤼', '🏇', '🎾', '⛹️',
 ];
 
 export const EXERCISE_COLOR_OPTIONS = [

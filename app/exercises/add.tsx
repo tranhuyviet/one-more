@@ -39,14 +39,13 @@ export default function AddExerciseScreen() {
   const [unit, setUnit] = useState<Unit>(existing?.unit ?? 'reps');
   const [color, setColor] = useState(existing?.color ?? EXERCISE_COLOR_OPTIONS[0]);
   const [muscleGroup, setMuscleGroup] = useState(existing?.muscleGroup ?? '');
-  const [dailyGoal, setDailyGoal] = useState(existing?.dailyGoal ?? 0);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (!user || !name.trim()) return;
     setSaving(true);
     try {
-      const data = { name: name.trim(), icon, unit, color, muscleGroup, dailyGoal: dailyGoal > 0 ? dailyGoal : undefined };
+      const data = { name: name.trim(), icon, unit, color, muscleGroup };
       if (isEdit) {
         await updateExercise(user.uid, existing!.id, data);
       } else {
@@ -88,7 +87,7 @@ export default function AddExerciseScreen() {
       style={[styles.flex, { backgroundColor: colors.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: 16 }]}>
         <TouchableOpacity
           style={[styles.backBtn, { borderColor: colors.line }]}
           onPress={() => router.back()}
@@ -258,31 +257,6 @@ export default function AddExerciseScreen() {
               </TouchableOpacity>
             );
           })}
-        </View>
-
-        {/* Daily goal */}
-        <SectionLabel label={`${t.dailyGoalLabel} · ${t.dailyGoalOpt}`} />
-        <View style={[styles.goalRow, { borderColor: colors.line }]}>
-          <Text style={[styles.goalValue, { color: colors.ink }]}>{dailyGoal || '—'}</Text>
-          {dailyGoal > 0 && (
-            <Text style={[styles.goalUnit, { color: colors.ink2 }]}>
-              {unit === 'reps' ? t.reps : unit === 'duration' ? t.seconds : t.km} / ngày
-            </Text>
-          )}
-          <View style={styles.goalBtns}>
-            <TouchableOpacity
-              style={[styles.goalBtn, { borderColor: colors.line }]}
-              onPress={() => setDailyGoal(v => Math.max(0, v - 5))}
-            >
-              <Text style={[styles.goalBtnText, { color: colors.ink }]}>−</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.goalBtn, { borderColor: colors.line }]}
-              onPress={() => setDailyGoal(v => v + 5)}
-            >
-              <Text style={[styles.goalBtnText, { color: colors.ink }]}>+</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <Button
