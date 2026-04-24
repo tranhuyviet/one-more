@@ -7,14 +7,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
 
 type TabItem =
-  | { id: string; href: string; icon: 'home' | 'chart' | 'list' | 'user'; labelKey: 'home' | 'stats' | 'history' | 'profile'; big?: false }
+  | { id: string; href: string; icon: 'home' | 'chart' | 'clock' | 'user'; labelKey: 'home' | 'stats' | 'history' | 'profile'; big?: false }
   | { id: string; href: string; icon: 'plus'; labelKey: 'log'; big: true };
 
 const TABS: TabItem[] = [
   { id: 'home',    href: '/',          icon: 'home',  labelKey: 'home' },
   { id: 'stats',   href: '/stats',     icon: 'chart', labelKey: 'stats' },
   { id: 'log',     href: '/log/picker', icon: 'plus',  labelKey: 'log', big: true },
-  { id: 'history', href: '/history',   icon: 'list',  labelKey: 'history' },
+  { id: 'history', href: '/history',   icon: 'clock', labelKey: 'history' },
   { id: 'profile', href: '/profile',   icon: 'user',  labelKey: 'profile' },
 ];
 
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 8,
+    paddingTop: 24,
   },
   tab: {
     flex: 1,
@@ -91,9 +91,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   plusBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -8,
