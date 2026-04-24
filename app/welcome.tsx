@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useExerciseStore } from '@/store/useExerciseStore';
+import AppLogo from '@/components/ui/AppLogo';
 import Button from '@/components/ui/Button';
 import { Language } from '@/types';
 
@@ -51,21 +52,20 @@ export default function WelcomeScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 48, paddingBottom: insets.bottom + 32 },
+          { paddingTop: insets.top + 56, paddingBottom: insets.bottom + 40 },
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Brand mark */}
-        <View style={[styles.brandMark, { backgroundColor: colors.accent }]}>
-          <Text style={[styles.brandText, { color: '#fff' }]}>W</Text>
-        </View>
+        {/* Top spacer */}
+        <View style={styles.topSpacer} />
 
-        <Text style={[styles.title, { color: colors.ink }]}>
-          {t.welcomeTitle}
-        </Text>
-        <Text style={[styles.desc, { color: colors.ink2 }]}>
-          {t.welcomeDesc}
-        </Text>
+        {/* Brand mark */}
+        <View style={styles.brandWrap}>
+          <AppLogo size={72} />
+          <Text style={[styles.brandName, { color: colors.ink }]}>
+            ONE MORE
+          </Text>
+        </View>
 
         {/* Name input */}
         <Text style={[styles.fieldLabel, { color: colors.ink2 }]}>
@@ -87,7 +87,7 @@ export default function WelcomeScreen() {
         </View>
 
         {/* Language picker */}
-        <Text style={[styles.fieldLabel, { color: colors.ink2, marginTop: 28 }]}>
+        <Text style={[styles.fieldLabel, { color: colors.ink2, marginTop: 32 }]}>
           {t.languageLabel.toUpperCase()}
         </Text>
         <View style={styles.langList}>
@@ -121,9 +121,7 @@ export default function WelcomeScreen() {
                     backgroundColor: active ? colors.accent : 'transparent',
                   },
                 ]}>
-                  {active && (
-                    <View style={styles.radioInner} />
-                  )}
+                  {active && <View style={styles.radioCheck} />}
                 </View>
               </TouchableOpacity>
             );
@@ -132,24 +130,12 @@ export default function WelcomeScreen() {
 
         <View style={styles.spacer} />
 
-        <Text style={[styles.importHint, { color: colors.ink2 }]}>
-          {t.alreadyHaveData}{' '}
-          <Text style={{ color: colors.accent, fontWeight: '600' }}>
-            {t.importFromFile}
-          </Text>
-        </Text>
-
         <Button
           label={t.getStarted}
           onPress={handleStart}
           loading={loading}
           disabled={!name.trim()}
-          style={styles.startBtn}
         />
-
-        <Text style={[styles.hint, { color: colors.ink2 }]}>
-          {t.canChangeAnytime}
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -161,30 +147,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     flexGrow: 1,
   },
-  brandMark: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+  topSpacer: { height: 60 },
+  brandWrap: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 44,
   },
-  brandText: {
-    fontSize: 28,
+  brandName: {
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: -1,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '400',
-    letterSpacing: -1,
-    lineHeight: 42,
-    marginBottom: 10,
-  },
-  desc: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 40,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    marginTop: 18,
   },
   fieldLabel: {
     fontSize: 11,
@@ -227,25 +200,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioInner: {
+  radioCheck: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: '#fff',
   },
-  spacer: { flex: 1, minHeight: 24 },
-  importHint: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  startBtn: {
-    marginBottom: 14,
-  },
-  hint: {
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 16,
-    opacity: 0.7,
-  },
+  spacer: { flex: 1, minHeight: 32 },
 });
