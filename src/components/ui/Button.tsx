@@ -42,9 +42,12 @@ export default function Button({
       backgroundColor: 'transparent',
     }),
     ...(variant === 'danger' && {
-      backgroundColor: colors.dangerSoft,
-      borderWidth: 1,
-      borderColor: colors.danger,
+      backgroundColor: colors.danger,
+      shadowColor: colors.danger,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
     }),
     ...(disabled && { opacity: 0.5 }),
   };
@@ -54,7 +57,7 @@ export default function Button({
     ...(variant === 'primary' && { color: isDark ? colors.bg : '#fff' }),
     ...(variant === 'outline' && { color: colors.ink }),
     ...(variant === 'ghost' && { color: colors.ink2 }),
-    ...(variant === 'danger' && { color: colors.danger }),
+    ...(variant === 'danger' && { color: '#fff' }),
   };
 
   return (

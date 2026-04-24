@@ -97,13 +97,7 @@ export default function AddExerciseScreen() {
         <Text style={[styles.headerTitle, { color: colors.ink }]}>
           {isEdit ? t.editExercise : t.addExerciseTitle}
         </Text>
-        {isEdit ? (
-          <TouchableOpacity onPress={handleDelete}>
-            <Icon name="trash" size={20} stroke={colors.danger} sw={1.8} />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 36 }} />
-        )}
+        <View style={{ width: 36 }} />
       </View>
 
       <ScrollView
@@ -266,6 +260,14 @@ export default function AddExerciseScreen() {
           disabled={!name.trim()}
           style={{ marginTop: 32 }}
         />
+        {isEdit && (
+          <Button
+            label={t.deleteExercise}
+            variant="danger"
+            onPress={handleDelete}
+            style={{ marginTop: 24 }}
+          />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

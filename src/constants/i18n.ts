@@ -68,7 +68,7 @@ const vi = {
   editExercise: 'Sửa bài tập',
   saveChanges: 'Lưu thay đổi',
   deleteExercise: 'Xóa bài tập',
-  deleteExerciseConfirm: 'Bài tập này sẽ bị xóa vĩnh viễn. Dữ liệu log vẫn được giữ lại.',
+  deleteExerciseConfirm: 'Bài tập sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác.',
   switchExercise: 'Đổi bài tập',
   preview: 'Xem trước',
 
@@ -228,7 +228,7 @@ const en: typeof vi = {
   editExercise: 'Edit exercise',
   saveChanges: 'Save changes',
   deleteExercise: 'Delete exercise',
-  deleteExerciseConfirm: 'This exercise will be permanently deleted. Log data will be kept.',
+  deleteExerciseConfirm: 'This exercise will be permanently deleted. This action cannot be undone.',
   switchExercise: 'Change exercise',
   preview: 'Preview',
 
