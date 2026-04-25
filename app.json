@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.viet.tran.onemore"
+      "bundleIdentifier": "com.viet.tran.onemore",
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.viet.tran.onemore",

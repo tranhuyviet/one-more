@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { useTranslation } from '@/hooks/useTranslation';
+import { translations } from '@/constants/i18n';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useExerciseStore } from '@/store/useExerciseStore';
@@ -23,7 +23,6 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { t } = useTranslation();
   const user = useAuthStore(s => s.user);
   const { createProfile } = useProfileStore();
   const { seedDefaults } = useExerciseStore();
@@ -31,6 +30,7 @@ export default function WelcomeScreen() {
   const [name, setName] = useState('');
   const [lang, setLang] = useState<Language>('vi');
   const [loading, setLoading] = useState(false);
+  const t = translations[lang];
 
   async function handleStart() {
     if (!user || !name.trim()) return;

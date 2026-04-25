@@ -61,11 +61,12 @@ export default function HomeScreen() {
   const [expanded, setExpanded] = React.useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading || profileLoading) return;
     if (!user) return;
     if (!profile) { router.replace('/welcome'); return; }
     loadTodayLogs(user.uid);
     loadWeekData();
-  }, [user, profile]);
+  }, [user, profile, authLoading, profileLoading]);
 
   useEffect(() => {
     if (Object.keys(weekData).length === 0) return;
