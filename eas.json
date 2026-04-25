@@ -26,9 +26,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "viet.tran.dev@gmail.com",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "appleId": "viet.tran.dev@gmail.com"
       }
     }
   }

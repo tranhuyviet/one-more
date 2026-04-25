@@ -4,9 +4,18 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "dev": "npx expo start --dev-client",
+    "dev:tunnel": "npx expo start --dev-client --tunnel -c",
+    "dev:lan": "npx expo start --dev-client",
+    "build": "npx expo prebuild --clean",
+    "android": "expo run:android",
+    "ios": "npx expo run:ios",
+    "ios:device": "npx expo run:ios --device",
+    "ios:release": "npx expo run:ios --device --configuration Release",
+    "web": "expo start --web",
+    "build:ios": "eas build --profile preview --platform ios",
+    "build:ios:prod": "eas build --profile production --platform ios",
+    "testflight": "eas build --profile production --platform ios && eas submit --profile production --platform ios"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
