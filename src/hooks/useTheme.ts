@@ -6,10 +6,8 @@ export function useTheme() {
   const systemScheme = useColorScheme();
   const profile = useProfileStore(s => s.profile);
 
-  // Profile preference overrides system setting if set
-  const isDark = profile != null
-    ? profile.darkMode
-    : systemScheme === 'dark';
+  const mode = profile?.darkMode ?? 'auto';
+  const isDark = mode === 'auto' ? systemScheme === 'dark' : mode === 'dark';
 
   return {
     isDark,

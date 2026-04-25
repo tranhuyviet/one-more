@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Profile, Language } from '@/types';
+import { Profile, Language, AppearanceMode } from '@/types';
 import { getProfile, createProfile, updateProfile } from '@/firebase/profile';
 
 interface ProfileState {
@@ -9,7 +9,7 @@ interface ProfileState {
   createProfile: (userId: string, name: string, language: Language) => Promise<void>;
   updateName: (userId: string, name: string) => Promise<void>;
   updateLanguage: (userId: string, language: Language) => Promise<void>;
-  toggleDarkMode: (userId: string) => Promise<void>;
+  setAppearance: (userId: string, mode: AppearanceMode) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -37,9 +37,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set(s => ({ profile: s.profile ? { ...s.profile, language } : null }));
   },
 
-  toggleDarkMode: async (userId) => {
-    const current = get().profile?.darkMode ?? false;
-    await updateProfile(userId, { darkMode: !current });
-    set(s => ({ profile: s.profile ? { ...s.profile, darkMode: !current } : null }));
+  setAppearance: async (userId, mode) => {
+    await updateProfile(userId, { darkMode: mode });
+    set(s => ({ profile: s.profile ? { ...s.profile, darkMode: mode } : null }));
   },
 }));

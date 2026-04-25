@@ -2,7 +2,7 @@ import {
   doc, getDoc, setDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './config';
-import { Profile, Language } from '@/types';
+import { Profile, Language, AppearanceMode } from '@/types';
 
 function profileRef(userId: string) {
   return doc(db, 'users', userId, 'data', 'profile');
@@ -11,7 +11,12 @@ function profileRef(userId: string) {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const snap = await getDoc(profileRef(userId));
   if (!snap.exists()) return null;
-  return snap.data() as Profile;
+  const data = snap.data() as any;
+  // migrate old boolean darkMode from v1
+  if (typeof data.darkMode === 'boolean') {
+    data.darkMode = data.darkMode ? 'dark' : 'auto';
+  }
+  return data as Profile;
 }
 
 export async function createProfile(
@@ -23,7 +28,7 @@ export async function createProfile(
     userId,
     name,
     language,
-    darkMode: false,
+    darkMode: 'auto' as AppearanceMode,
     createdAt: Date.now(),
   });
 }

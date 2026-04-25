@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Switch,
+  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,7 @@ import { useExerciseStore } from '@/store/useExerciseStore';
 import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
-import { Language } from '@/types';
+import { Language, AppearanceMode } from '@/types';
 
 const LANGUAGES: { id: Language; flag: string; name: string }[] = [
   { id: 'vi', flag: '🇻🇳', name: 'Tiếng Việt' },
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const user = useAuthStore(s => s.user);
   const profile = useProfileStore(s => s.profile);
-  const { updateName, updateLanguage, toggleDarkMode } = useProfileStore();
+  const { updateName, updateLanguage, setAppearance } = useProfileStore();
   const exercises = useExerciseStore(s => s.exercises);
 
   const [name, setName] = useState(profile?.name ?? '');
@@ -77,9 +77,9 @@ export default function ProfileScreen() {
     await updateLanguage(user.uid, lang);
   }
 
-  async function handleToggleDark() {
+  async function handleAppearance(mode: AppearanceMode) {
     if (!user) return;
-    await toggleDarkMode(user.uid);
+    await setAppearance(user.uid, mode);
   }
 
   const initials = (profile?.name ?? 'U')
@@ -181,21 +181,30 @@ export default function ProfileScreen() {
         <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 24 }]}>
           {t.appearance.toUpperCase()}
         </Text>
-        <Row
-          label={t.darkMode}
-          icon="🌙"
-          onPress={handleToggleDark}
-          isLast
-          colors={colors}
-          action={
-            <Switch
-              value={isDark}
-              onValueChange={handleToggleDark}
-              trackColor={{ true: colors.accent, false: colors.line }}
-              thumbColor="#fff"
-            />
-          }
-        />
+        <View style={[styles.appearanceCard, { backgroundColor: colors.card, borderColor: colors.line }]}>
+          <View style={styles.appearanceRow}>
+            <Text style={styles.appearanceIcon}>🌙</Text>
+            <Text style={[styles.appearanceLabel, { color: colors.ink }]}>{t.darkMode}</Text>
+          </View>
+          <View style={[styles.segmented, { backgroundColor: colors.bg, borderColor: colors.line }]}>
+            {(['auto', 'light', 'dark'] as AppearanceMode[]).map(mode => {
+              const active = (profile?.darkMode ?? 'auto') === mode;
+              const label = mode === 'auto' ? t.appearanceAuto : mode === 'light' ? t.appearanceLight : t.appearanceDark;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.segBtn, active && { backgroundColor: colors.accent }]}
+                  onPress={() => handleAppearance(mode)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.segBtnText, { color: active ? '#fff' : colors.ink2 }]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
 
         {/* Exercises */}
         <Text style={[styles.sectionLabel, { color: colors.ink2, marginTop: 28 }]}>
@@ -293,4 +302,19 @@ const styles = StyleSheet.create({
     textAlign: 'center', fontSize: 11, lineHeight: 18,
     marginTop: 32, opacity: 0.6,
   },
+  appearanceCard: {
+    borderRadius: 12, borderWidth: 1,
+    padding: 14, gap: 12,
+  },
+  appearanceRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  appearanceIcon: { fontSize: 16 },
+  appearanceLabel: { fontSize: 15, fontWeight: '500' },
+  segmented: {
+    flexDirection: 'row', borderRadius: 8, borderWidth: 1,
+    overflow: 'hidden',
+  },
+  segBtn: {
+    flex: 1, paddingVertical: 8, alignItems: 'center',
+  },
+  segBtnText: { fontSize: 13, fontWeight: '600' },
 });

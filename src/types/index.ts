@@ -1,11 +1,13 @@
 export type Language = 'vi' | 'en';
 export type Unit = 'reps' | 'duration' | 'distance';
 
+export type AppearanceMode = 'auto' | 'light' | 'dark';
+
 export interface Profile {
   userId: string;
   name: string;
   language: Language;
-  darkMode: boolean;
+  darkMode: AppearanceMode;
   createdAt: number;
 }
 
