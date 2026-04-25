@@ -143,7 +143,7 @@ Cần điền `ascAppId` và `appleTeamId` vào `eas.json` → phần `submit.pr
 Lấy ở [App Store Connect](https://appstoreconnect.apple.com) và [Apple Developer Portal](https://developer.apple.com/account).
 
 ```bash
-npm run testflight
+pnpm testflight
 ```
 
 Lệnh này sẽ: build production IPA → tự động upload lên TestFlight.  
@@ -155,7 +155,7 @@ Sau đó vào App Store Connect → TestFlight → invite tester hoặc tự tes
 
 Mỗi lần có thay đổi muốn cài lại:
 ```bash
-npm run build:ios
+pnpm build:ios
 ```
 
 Nếu chỉ sửa JS (không sửa native code), có thể dùng **EAS Update** (OTA update — không cần build lại):
@@ -179,20 +179,20 @@ eas update --branch preview --message "mô tả thay đổi"
 
 ```bash
 # Dev
-npx expo start --port 8083        # Chạy dev server (Expo Go)
-npm run dev                       # Dev client
-npm run dev:tunnel                # Dev client qua tunnel (khác mạng)
+pnpm start                        # Chạy dev server (Expo Go)
+pnpm dev                       # Dev client
+pnpm dev:tunnel                # Dev client qua tunnel (khác mạng)
 npx tsc --noEmit                  # Kiểm tra TypeScript
 
 # Build local
-npm run ios                       # Simulator
-npm run ios:device                # iPhone debug (cắm USB)
-npm run ios:release               # iPhone release (cắm USB, expire 7 ngày)
+pnpm ios                       # Simulator
+pnpm ios:device                # iPhone debug (cắm USB)
+pnpm ios:release               # iPhone release (cắm USB, expire 7 ngày)
 
 # EAS cloud build
-npm run build:ios                 # Preview build → cài trực tiếp lên iPhone
-npm run build:ios:prod            # Production build
-npm run testflight                # Build + upload lên TestFlight
+pnpm build:ios                 # Preview build → cài trực tiếp lên iPhone
+pnpm build:ios:prod            # Production build
+pnpm testflight                # Build + upload lên TestFlight
 
 # Thiết bị & update
 eas device:create                 # Đăng ký iPhone mới
