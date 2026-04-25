@@ -261,7 +261,7 @@ export default function AddExerciseScreen() {
           disabled={!name.trim()}
           style={{ marginTop: 32 }}
         />
-        {isEdit && (
+        {isEdit && exercises.length > 1 && (
           <Button
             label={t.deleteExercise}
             icon="trash"

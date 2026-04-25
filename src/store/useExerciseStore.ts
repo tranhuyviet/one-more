@@ -43,6 +43,7 @@ export const useExerciseStore = create<ExerciseState>((set, get) => ({
   },
 
   deleteExercise: async (userId, id) => {
+    if (get().exercises.length <= 1) return;
     await deleteExercise(userId, id);
     set(s => ({ exercises: s.exercises.filter(ex => ex.id !== id) }));
   },

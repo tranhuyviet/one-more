@@ -2,20 +2,12 @@ import { Exercise } from '@/types';
 
 export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
   {
-    name: 'Hít đất',
+    name: 'Chống đẩy',
     icon: '💪',
     unit: 'reps',
     color: '#0F7A3A',
     muscleGroup: 'Ngực / Vai',
     sortOrder: 0,
-  },
-  {
-    name: 'Nhảy dây',
-    icon: '⚡',
-    unit: 'reps',
-    color: '#C89A1A',
-    muscleGroup: 'Cardio',
-    sortOrder: 1,
   },
 ];
 
