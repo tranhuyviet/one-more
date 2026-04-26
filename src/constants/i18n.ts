@@ -74,11 +74,11 @@ const vi = {
 
   // Units options
   unitReps: 'Lần',
-  unitRepsDesc: 'Đếm số lần (hít đất, squat)',
+  unitRepsDesc: 'Đếm số lần (hít đất, nhảy dây,...)',
   unitDuration: 'Thời gian',
-  unitDurationDesc: 'Phút:giây (plank, đi bộ)',
+  unitDurationDesc: 'Phút:giây (plank, ...)',
   unitDistance: 'Khoảng cách',
-  unitDistanceDesc: 'Mét / km (chạy, đạp xe)',
+  unitDistanceDesc: 'Mét / km (chạy, đạp xe,...)',
 
   // Muscle groups
   mgChest: 'Ngực / Vai',
@@ -236,11 +236,11 @@ const en: typeof vi = {
   preview: 'Preview',
 
   unitReps: 'Reps',
-  unitRepsDesc: 'Count reps (push-ups, squats)',
+  unitRepsDesc: 'Count reps (push-ups, squats,...)',
   unitDuration: 'Duration',
-  unitDurationDesc: 'Min:sec (plank, walking)',
+  unitDurationDesc: 'Min:sec (plank,...)',
   unitDistance: 'Distance',
-  unitDistanceDesc: 'Meters / km (running, cycling)',
+  unitDistanceDesc: 'Meters / km (running, cycling,...)',
 
   mgChest: 'Chest / Shoulders',
   mgBack: 'Back',

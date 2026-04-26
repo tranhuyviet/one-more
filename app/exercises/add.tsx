@@ -18,7 +18,6 @@ import {
 } from '@/constants/defaultExercises';
 import { Unit } from '@/types';
 
-const MUSCLE_GROUPS = ['Ngực / Vai', 'Lưng', 'Chân', 'Bụng', 'Cardio', 'Toàn thân'];
 
 export default function AddExerciseScreen() {
   const { id: editId, name: prefillName, icon: prefillIcon } = useLocalSearchParams<{
@@ -38,14 +37,13 @@ export default function AddExerciseScreen() {
   const [icon, setIcon] = useState(existing?.icon ?? prefillIcon ?? '💪');
   const [unit, setUnit] = useState<Unit>(existing?.unit ?? 'reps');
   const [color, setColor] = useState(existing?.color ?? EXERCISE_COLOR_OPTIONS[0]);
-  const [muscleGroup, setMuscleGroup] = useState(existing?.muscleGroup ?? '');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (!user || !name.trim()) return;
     setSaving(true);
     try {
-      const data = { name: name.trim(), icon, unit, color, muscleGroup };
+      const data = { name: name.trim(), icon, unit, color };
       if (isEdit) {
         await updateExercise(user.uid, existing!.id, data);
       } else {
@@ -118,7 +116,6 @@ export default function AddExerciseScreen() {
             </Text>
             <Text style={[styles.previewMeta, { color: colors.accentInk }]}>
               {unit === 'reps' ? t.unitReps : unit === 'duration' ? t.unitDuration : t.unitDistance}
-              {muscleGroup ? ` · ${muscleGroup}` : ''}
             </Text>
           </View>
         </View>
@@ -224,35 +221,6 @@ export default function AddExerciseScreen() {
           })}
         </View>
 
-        {/* Muscle group */}
-        <SectionLabel label={`${t.muscleGroup} · ${t.muscleGroupOpt}`} />
-        <View style={styles.muscleGrid}>
-          {MUSCLE_GROUPS.map(g => {
-            const active = g === muscleGroup;
-            return (
-              <TouchableOpacity
-                key={g}
-                style={[
-                  styles.musclePill,
-                  {
-                    borderColor: active ? colors.accent : colors.line,
-                    borderWidth: active ? 1.5 : 1,
-                    backgroundColor: active ? colors.accentSoft : 'transparent',
-                  },
-                ]}
-                onPress={() => setMuscleGroup(active ? '' : g)}
-              >
-                <Text style={[styles.musclePillText, {
-                  color: active ? colors.accentInk : colors.ink,
-                  fontWeight: active ? '600' : '500',
-                }]}>
-                  {g}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
         <Button
           label={isEdit ? t.saveChanges : t.createExercise}
           icon={isEdit ? 'check' : 'plus'}
@@ -292,7 +260,7 @@ const styles = StyleSheet.create({
   previewName: { fontSize: 18, fontWeight: '600', marginTop: 2 },
   previewMeta: { fontSize: 12, marginTop: 2, opacity: 0.85 },
   nameInput: { borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '500', marginTop: 10, marginBottom: 28 },
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 0 },
   iconCell: { width: '14%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 22 },
   unitList: { gap: 8, marginTop: 10, marginBottom: 28 },
@@ -303,13 +271,4 @@ const styles = StyleSheet.create({
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   colorRow: { flexDirection: 'row', gap: 10, marginTop: 10, marginBottom: 28 },
   colorDot: { width: 40, height: 40, borderRadius: 20 },
-  muscleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
-  musclePill: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 18 },
-  musclePillText: { fontSize: 13 },
-  goalRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 10 },
-  goalValue: { fontSize: 17, fontWeight: '500' },
-  goalUnit: { fontSize: 14, marginLeft: 6 },
-  goalBtns: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
-  goalBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  goalBtnText: { fontSize: 16, lineHeight: 20 },
 });
