@@ -16,6 +16,27 @@ pnpm test:coverage           # Run tests with coverage report
 pnpm test:watch              # Watch mode
 ```
 
+## Release Process
+
+**KHÔNG BAO GIỜ** chạy `eas build` trực tiếp — luôn dùng `pnpm check` trước.
+
+```bash
+pnpm check                   # Kiểm tra toàn bộ trước khi release
+pnpm fix                     # Tự động fix package versions + doctor
+pnpm release:ios             # check + build production iOS
+pnpm release:testflight      # check + build + submit TestFlight
+```
+
+### `pnpm check` chạy theo thứ tự:
+1. **`tsc --noEmit`** — TypeScript errors → crash app ngay khi chạy
+2. **`pnpm test`** — 104 unit tests, bắt logic bugs trước khi ship
+3. **`expo install --check`** — phát hiện package versions không tương thích Expo SDK
+4. **`expo-doctor`** — kiểm tra config app.json, eas.json, dependencies health
+
+### Khi nào chạy `pnpm build` (prebuild) locally?
+Chỉ khi cần debug lỗi native (module linking, permission config...).
+EAS Build tự prebuild trên server — không cần làm local trước khi release.
+
 ## Tech Stack
 
 - **Expo SDK 54** + **Expo Router v6** (file-based routing)

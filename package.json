@@ -22,7 +22,11 @@
     "migrate:up": "tsx migrations/runner.ts up",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "check": "npx tsc --noEmit && pnpm test && npx expo install --check && npx expo-doctor",
+    "fix": "npx expo install && npx expo-doctor",
+    "release:ios": "pnpm check && eas build --profile production --platform ios",
+    "release:testflight": "pnpm check && eas build --profile production --platform ios && eas submit --profile production --platform ios"
   },
   "jest": {
     "testEnvironment": "node",
@@ -33,19 +37,27 @@
       "^@/(.*)$": "<rootDir>/src/$1"
     },
     "transform": {
-      "^.+\\.tsx?$": ["ts-jest", {
-        "tsconfig": {
-          "strict": true,
-          "esModuleInterop": true,
-          "paths": { "@/*": ["src/*"] }
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "strict": true,
+            "esModuleInterop": true,
+            "paths": {
+              "@/*": [
+                "src/*"
+              ]
+            }
+          }
         }
-      }]
+      ]
     }
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
+    "expo-linking": "~8.0.11",
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.9",
     "firebase": "^12.12.1",
@@ -59,7 +71,7 @@
   },
   "devDependencies": {
     "@testing-library/react-native": "^13.3.3",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
     "firebase-admin": "^13.8.0",
     "jest-expo": "~54.0.17",
