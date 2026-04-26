@@ -225,7 +225,11 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.rowLabel, { color: colors.ink, flex: 1 }]}>{ex.name}</Text>
             <Text style={[styles.rowValue, { color: colors.ink2 }]}>
-              {ex.unit === 'reps' ? t.reps : ex.unit === 'duration' ? t.seconds : t.km}
+              {ex.unit === 'reps' ? t.reps
+                : ex.unit === 'duration' ? t.seconds
+                : ex.unit === 'minutes' ? t.minutes
+                : ex.unit === 'km' ? t.km
+                : t.meters}
             </Text>
             <Icon name="chev" size={14} stroke={colors.ink2} sw={1.6} />
           </TouchableOpacity>

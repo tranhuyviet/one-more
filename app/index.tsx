@@ -43,7 +43,9 @@ function getWeekLabel(date: Date, lang: string): string {
 function getUnitLabel(unit: Unit, t: ReturnType<typeof useTranslation>['t']): string {
   if (unit === 'reps') return t.reps;
   if (unit === 'duration') return t.seconds;
-  return t.km;
+  if (unit === 'minutes') return t.minutes;
+  if (unit === 'km') return t.km;
+  return t.meters;
 }
 
 export default function HomeScreen() {
