@@ -27,8 +27,8 @@ export const EXERCISE_ICON_OPTIONS = [
 ];
 
 export const EXERCISE_COLOR_OPTIONS = [
-  '#0F7A3A', '#C89A1A', '#8B4CB8',
-  '#C55A3A', '#2E8BC0', '#D94B6B',
+  '#0F7A3A', '#5FBF60', '#2E8BC0', '#4A90D9', '#8B4CB8', '#C06BBD', '#D94B6B',
+  '#C55A3A', '#E8873A', '#C89A1A', '#A8B400', '#5BA08A', '#7B7B7B', '#3D3D3D',
 ];
 
 export const SUGGESTED_EXERCISES = [

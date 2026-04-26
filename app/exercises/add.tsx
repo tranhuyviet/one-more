@@ -377,23 +377,21 @@ export default function AddExerciseScreen() {
 
         {/* Color */}
         <SectionLabel label={t.colorLabel} />
-        <View style={styles.colorRow}>
+        <View style={styles.colorGrid}>
           {EXERCISE_COLOR_OPTIONS.map(c => {
             const active = c === color;
             return (
-              <TouchableOpacity
-                key={c}
-                style={[
+              <TouchableOpacity key={c} style={styles.colorCell} onPress={() => setColor(c)}>
+                <View style={[
                   styles.colorDot,
                   { backgroundColor: c },
                   active && {
                     borderWidth: 3, borderColor: colors.bg,
                     shadowColor: c, shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 1, shadowRadius: 4, elevation: 4,
+                    shadowOpacity: 1, shadowRadius: 6, elevation: 4,
                   },
-                ]}
-                onPress={() => setColor(c)}
-              />
+                ]} />
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -460,6 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 16, fontWeight: '500',
     borderWidth: 1,
   },
-  colorRow: { flexDirection: 'row', gap: 10, marginTop: 10, marginBottom: 28 },
-  colorDot: { width: 40, height: 40, borderRadius: 20 },
+  colorGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, marginBottom: 28 },
+  colorCell: { width: '14.28%', aspectRatio: 1, padding: 5 },
+  colorDot: { flex: 1, borderRadius: 999 },
 });
