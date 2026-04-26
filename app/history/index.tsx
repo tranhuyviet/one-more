@@ -10,12 +10,13 @@ import { useExerciseStore } from '@/store/useExerciseStore';
 import { useLogStore } from '@/store/useLogStore';
 import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
+import ExerciseFilterBar from '@/components/ui/ExerciseFilterBar';
+import TimeRangeTabs, { TimeRange } from '@/components/ui/TimeRangeTabs';
+import PeriodNav from '@/components/ui/PeriodNav';
 import DayDetail from '@/components/exercise/DayDetail';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
 import { ExerciseLog, Exercise } from '@/types';
 import { getWeekDates, getDateString } from '@/firebase/logs';
-
-type TimeRange = 'week' | 'month' | 'year';
 
 interface PeriodEntry {
   key: string;
@@ -210,86 +211,21 @@ export default function HistoryScreen() {
           </View>
         </View>
 
-        {/* Exercise filter chips */}
-        <ScrollView
-          horizontal showsHorizontalScrollIndicator={false}
-          style={styles.filterScroll}
-          contentContainerStyle={styles.filterContent}
-        >
-          {exerciseFilters.map(ex => {
-            const active = ex.id === selectedFilter;
-            return (
-              <TouchableOpacity
-                key={ex.id}
-                style={[
-                  styles.filterChip,
-                  {
-                    borderColor: active ? colors.accent : colors.line,
-                    borderWidth: active ? 1.5 : 1,
-                    backgroundColor: active ? colors.accentSoft : 'transparent',
-                  },
-                ]}
-                onPress={() => setSelectedFilter(ex.id)}
-              >
-                <Text style={[styles.filterIcon, { color: active ? colors.accentInk : colors.ink }]}>{ex.icon}</Text>
-                <Text style={[styles.filterName, {
-                  color: active ? colors.accentInk : colors.ink,
-                  fontWeight: active ? '600' : '500',
-                }]}>
-                  {ex.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <ExerciseFilterBar
+          items={exerciseFilters}
+          selectedId={selectedFilter}
+          onSelect={setSelectedFilter}
+        />
 
-        {/* Time range */}
-        <View style={[styles.rangeControl, { backgroundColor: colors.card }]}>
-          {(['week', 'month', 'year'] as TimeRange[]).map(r => {
-            const labels: Record<TimeRange, string> = { week: t.week, month: t.month, year: t.year };
-            const active = r === range;
-            return (
-              <TouchableOpacity
-                key={r}
-                style={[styles.rangeBtn, active && { backgroundColor: colors.bg }]}
-                onPress={() => setRange(r)}
-              >
-                <Text style={[styles.rangeBtnText, {
-                  color: active ? colors.accent : colors.ink2,
-                  fontWeight: active ? '700' : '400',
-                }]}>
-                  {labels[r]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <TimeRangeTabs range={range} onChange={setRange} />
 
-        {/* Period navigator */}
-        <View style={[styles.periodNav, { borderBottomColor: colors.line }]}>
-          <TouchableOpacity
-            style={[styles.navBtn, { borderColor: colors.line }]}
-            onPress={() => setOffset(o => o - 1)}
-          >
-            <Icon name="chevLeft" size={12} stroke={colors.ink2} sw={2} />
-          </TouchableOpacity>
-          <View style={styles.periodCenter}>
-            <Text style={[styles.periodLabel, { color: colors.ink }]}>{periodLabel}</Text>
-            <Text style={[styles.periodSub, {
-              color: offset === 0 ? colors.accent : colors.ink2,
-              fontWeight: offset === 0 ? '600' : '400',
-            }]}>
-              {periodSub}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.navBtn, { borderColor: colors.line, opacity: offset >= 0 ? 0.35 : 1 }]}
-            onPress={() => setOffset(o => Math.min(0, o + 1))}
-            disabled={offset >= 0}
-          >
-            <Icon name="chev" size={12} stroke={colors.ink2} sw={2} />
-          </TouchableOpacity>
-        </View>
+        <PeriodNav
+          label={periodLabel}
+          sub={periodSub}
+          isPresent={offset === 0}
+          onPrev={() => setOffset(o => o - 1)}
+          onNext={() => setOffset(o => Math.min(0, o + 1))}
+        />
 
         {/* Period summary — only when filtered by a specific exercise */}
         {isFilteredByExercise && (
@@ -439,34 +375,6 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 },
   title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8 },
   subtitle: { fontSize: 13, marginTop: 4 },
-  filterScroll: { marginBottom: 14 },
-  filterContent: { gap: 8, paddingBottom: 4 },
-  filterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 10, paddingHorizontal: 16, borderRadius: 22,
-  },
-  filterIcon: { fontSize: 15 },
-  filterName: { fontSize: 14 },
-  rangeControl: {
-    flexDirection: 'row', gap: 2, padding: 3,
-    borderRadius: 12, marginBottom: 18,
-  },
-  rangeBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: 10,
-    alignItems: 'center',
-  },
-  rangeBtnText: { fontSize: 13 },
-  periodNav: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 20,
-  },
-  navBtn: {
-    width: 32, height: 32, borderRadius: 16, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  periodCenter: { alignItems: 'center' },
-  periodLabel: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
-  periodSub: { fontSize: 11, marginTop: 2, letterSpacing: 0.3 },
   summaryRow: { flexDirection: 'row', marginBottom: 24 },
   summaryCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
   summaryLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.6, textAlign: 'center' },

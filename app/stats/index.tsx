@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
@@ -8,115 +8,252 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useExerciseStore } from '@/store/useExerciseStore';
 import { useLogStore } from '@/store/useLogStore';
-import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
+import ExerciseFilterBar from '@/components/ui/ExerciseFilterBar';
+import TimeRangeTabs, { TimeRange } from '@/components/ui/TimeRangeTabs';
+import PeriodNav from '@/components/ui/PeriodNav';
 import LineChart from '@/components/charts/LineChart';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
-import { getDateString } from '@/firebase/logs';
-
-type TimeFilter = '3m' | '6m' | '1y' | 'all';
-
-function getTimeRangeMs(filter: TimeFilter): { startMs: number; endMs: number } {
-  const endMs = Date.now();
-  const months = filter === '3m' ? 3 : filter === '6m' ? 6 : filter === '1y' ? 12 : 36;
-  const start = new Date();
-  start.setMonth(start.getMonth() - months);
-  start.setHours(0, 0, 0, 0);
-  return { startMs: start.getTime(), endMs };
-}
+import { getWeekDates, getDateString } from '@/firebase/logs';
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const user = useAuthStore(s => s.user);
   const exercises = useExerciseStore(s => s.exercises);
-  const { rangedLogs, loadLogs } = useLogStore();
+  const { rangedLogs, loadLogs, loading } = useLogStore();
 
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('3m');
-  const [selectedEx, setSelectedEx] = useState<string>('all');
+  const [range, setRange] = useState<TimeRange>('week');
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [offset, setOffset] = useState(0);
+
+  const monthLabels = lang === 'vi'
+    ? ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  useEffect(() => { setOffset(0); }, [range]);
 
   useEffect(() => {
     if (!user) return;
-    const { startMs, endMs } = getTimeRangeMs(timeFilter);
+    const { startMs, endMs } = getLoadRange();
     loadLogs(user.uid, startMs, endMs);
-  }, [user, timeFilter]);
+  }, [user, range, offset]);
 
-  const filteredLogs = selectedEx === 'all'
-    ? rangedLogs
-    : rangedLogs.filter(l => l.exerciseId === selectedEx);
+  const now = new Date();
 
-  // Build weekly totals for chart
-  const weeklyTotals: number[] = [];
-  const weeklyLabels: string[] = [];
-  if (filteredLogs.length > 0) {
-    const byWeek: Record<string, number> = {};
-    filteredLogs.forEach(log => {
-      const d = new Date(log.createdAt);
-      const monday = new Date(d);
-      monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
-      const key = getDateString(monday);
-      byWeek[key] = (byWeek[key] ?? 0) + log.value;
-    });
-    const sorted = Object.entries(byWeek).sort(([a], [b]) => a.localeCompare(b));
-    const last12 = sorted.slice(-12);
-    last12.forEach(([key, val]) => {
-      weeklyTotals.push(val);
-      weeklyLabels.push(key.slice(5));
-    });
+  // Load current + previous period for comparison
+  function getLoadRange(): { startMs: number; endMs: number } {
+    if (range === 'week') {
+      const base = new Date(getWeekDates(now)[0]);
+      base.setDate(base.getDate() + offset * 7);
+      const weekDs = getWeekDates(base);
+      const start = new Date(weekDs[0]);
+      start.setDate(start.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(weekDs[6]); end.setHours(23, 59, 59, 999);
+      return { startMs: start.getTime(), endMs: end.getTime() };
+    }
+    if (range === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth() + offset - 1, 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { startMs: start.getTime(), endMs: end.getTime() };
+    }
+    const y = now.getFullYear() + offset;
+    const start = new Date(y - 1, 0, 1); start.setHours(0, 0, 0, 0);
+    const end = new Date(y, 11, 31); end.setHours(23, 59, 59, 999);
+    return { startMs: start.getTime(), endMs: end.getTime() };
   }
 
-  const thisWeekTotal = weeklyTotals.at(-1) ?? 0;
-  const lastWeekTotal = weeklyTotals.at(-2) ?? 0;
-  const weekDiff = lastWeekTotal > 0
-    ? Math.round(((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100)
-    : 0;
+  function getCurrentPeriodBounds(): { startMs: number; endMs: number } {
+    if (range === 'week') {
+      const base = new Date(getWeekDates(now)[0]);
+      base.setDate(base.getDate() + offset * 7);
+      const weekDs = getWeekDates(base);
+      const start = new Date(weekDs[0]); start.setHours(0, 0, 0, 0);
+      const end = new Date(weekDs[6]); end.setHours(23, 59, 59, 999);
+      return { startMs: start.getTime(), endMs: end.getTime() };
+    }
+    if (range === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { startMs: start.getTime(), endMs: end.getTime() };
+    }
+    const y = now.getFullYear() + offset;
+    const start = new Date(y, 0, 1); start.setHours(0, 0, 0, 0);
+    const end = new Date(y, 11, 31); end.setHours(23, 59, 59, 999);
+    return { startMs: start.getTime(), endMs: end.getTime() };
+  }
 
-  // Compare months
-  const now = new Date();
-  const thisMonthLogs = filteredLogs.filter(l => {
-    const d = new Date(l.createdAt);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const lastMonthLogs = filteredLogs.filter(l => {
-    const d = new Date(l.createdAt);
-    const last = new Date(now); last.setMonth(now.getMonth() - 1);
-    return d.getMonth() === last.getMonth() && d.getFullYear() === last.getFullYear();
-  });
-  const thisMonthTotal = thisMonthLogs.reduce((s, l) => s + l.value, 0);
-  const lastMonthTotal = lastMonthLogs.reduce((s, l) => s + l.value, 0);
-  const monthDiff = thisMonthTotal - lastMonthTotal;
-  const monthPct = lastMonthTotal > 0 ? Math.round((monthDiff / lastMonthTotal) * 100) : 0;
+  // Period label
+  function getPeriodInfo(): { label: string; sub: string } {
+    if (range === 'week') {
+      const base = new Date(getWeekDates(now)[0]);
+      base.setDate(base.getDate() + offset * 7);
+      const weekDs = getWeekDates(base);
+      const wStart = weekDs[0], wEnd = weekDs[6];
+      const label = `${wStart.getDate().toString().padStart(2,'0')} – ${wEnd.getDate().toString().padStart(2,'0')} · ${(wEnd.getMonth()+1).toString().padStart(2,'0')} · ${wEnd.getFullYear()}`;
+      return { label, sub: offset === 0 ? t.thisWeek : `${Math.abs(offset)} ${t.weeksAgo}` };
+    }
+    if (range === 'month') {
+      const ref = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const label = lang === 'vi'
+        ? `Tháng ${ref.getMonth() + 1} · ${ref.getFullYear()}`
+        : `${monthLabels[ref.getMonth()]} ${ref.getFullYear()}`;
+      return { label, sub: offset === 0 ? t.thisMonth : `${Math.abs(offset)} ${t.monthsAgo}` };
+    }
+    const y = now.getFullYear() + offset;
+    return { label: `${y}`, sub: offset === 0 ? t.thisYear : `${Math.abs(offset)} ${t.yearsAgo}` };
+  }
 
-  // All-time total
-  const allTimeTotal = rangedLogs.reduce((s, l) => s + l.value, 0);
+  const { label: periodLabel, sub: periodSub } = getPeriodInfo();
+  const { startMs: currStart, endMs: currEnd } = getCurrentPeriodBounds();
 
-  // Records
-  const byDay: Record<string, number> = {};
-  const bySet: number[] = [];
-  rangedLogs.forEach(log => {
-    const key = getDateString(new Date(log.createdAt));
-    byDay[key] = (byDay[key] ?? 0) + log.value;
-    bySet.push(log.value);
-  });
-  const bestDay = Math.max(0, ...Object.values(byDay));
-  const bestSet = Math.max(0, ...bySet);
-  const bestWeek = Math.max(0, ...weeklyTotals);
+  const baseLogs = selectedFilter === 'all'
+    ? rangedLogs
+    : rangedLogs.filter(l => l.exerciseId === selectedFilter);
 
-  const exerciseFilters = [
-    { id: 'all', label: t.allExercises },
-    ...exercises.map(ex => ({ id: ex.id, label: ex.name })),
+  const currentLogs = baseLogs.filter(l => l.createdAt >= currStart && l.createdAt <= currEnd);
+  const prevLogs = baseLogs.filter(l => l.createdAt < currStart);
+
+  const currentTotal = currentLogs.reduce((s, l) => s + l.value, 0);
+  const prevTotal = prevLogs.reduce((s, l) => s + l.value, 0);
+  const diff = currentTotal - prevTotal;
+  const diffPct = prevTotal > 0 ? Math.round((diff / prevTotal) * 100) : 0;
+
+  // Unit label for filtered exercise
+  const filteredExercise = selectedFilter !== 'all' ? exercises.find(e => e.id === selectedFilter) : null;
+  const unitLabel = filteredExercise
+    ? (filteredExercise.unit === 'reps' ? t.reps
+      : filteredExercise.unit === 'duration' ? t.seconds
+      : filteredExercise.unit === 'minutes' ? t.minutes
+      : filteredExercise.unit === 'km' ? t.km
+      : t.meters)
+    : '';
+
+  // Period count for avg
+  const periodCount = range === 'week' ? 7
+    : range === 'month' ? new Date(now.getFullYear(), now.getMonth() + offset + 1, 0).getDate()
+    : ((now.getFullYear() + offset) % 4 === 0 ? 366 : 365);
+  const avg = currentTotal > 0 ? Math.round(currentTotal / periodCount) : 0;
+
+  // Best entry in current period
+  function getBest(): number {
+    if (range === 'week') {
+      const base = new Date(getWeekDates(now)[0]);
+      base.setDate(base.getDate() + offset * 7);
+      const weekDs = getWeekDates(base);
+      const dailyTotals = weekDs.map(d => {
+        const ds = getDateString(d);
+        return currentLogs.filter(l => getDateString(new Date(l.createdAt)) === ds).reduce((s, l) => s + l.value, 0);
+      });
+      return Math.max(0, ...dailyTotals);
+    }
+    if (range === 'month') {
+      const ref = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const days = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+      let best = 0;
+      for (let i = 1; i <= days; i++) {
+        const ds = getDateString(new Date(ref.getFullYear(), ref.getMonth(), i));
+        const dayTotal = currentLogs.filter(l => getDateString(new Date(l.createdAt)) === ds).reduce((s, l) => s + l.value, 0);
+        if (dayTotal > best) best = dayTotal;
+      }
+      return best;
+    }
+    // year: best month
+    const y = now.getFullYear() + offset;
+    let best = 0;
+    for (let m = 0; m < 12; m++) {
+      const monthTotal = currentLogs.filter(l => {
+        const d = new Date(l.createdAt);
+        return d.getFullYear() === y && d.getMonth() === m;
+      }).reduce((s, l) => s + l.value, 0);
+      if (monthTotal > best) best = monthTotal;
+    }
+    return best;
+  }
+  const best = getBest();
+
+  // Chart data
+  function getChartData(): { data: number[]; labels: string[] } {
+    if (!filteredExercise) return { data: [], labels: [] };
+
+    if (range === 'week') {
+      const base = new Date(getWeekDates(now)[0]);
+      base.setDate(base.getDate() + offset * 7);
+      const weekDs = getWeekDates(base);
+      const dayNames = [t.mon, t.tue, t.wed, t.thu, t.fri, t.sat, t.sun];
+      const data = weekDs.map(d => {
+        const ds = getDateString(d);
+        return currentLogs.filter(l => getDateString(new Date(l.createdAt)) === ds).reduce((s, l) => s + l.value, 0);
+      });
+      return { data, labels: dayNames };
+    }
+
+    if (range === 'month') {
+      const ref = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const weeks: { start: Date; end: Date; label: string }[] = [];
+      let cursor = new Date(ref);
+      let w = 1;
+      while (cursor.getMonth() === ref.getMonth()) {
+        const wStart = new Date(cursor);
+        const wEnd = new Date(cursor);
+        wEnd.setDate(wEnd.getDate() + 6);
+        if (wEnd.getMonth() !== ref.getMonth()) wEnd.setDate(new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate());
+        weeks.push({ start: wStart, end: wEnd, label: `W${w}` });
+        cursor.setDate(cursor.getDate() + 7);
+        w++;
+      }
+      const data = weeks.map(wk =>
+        currentLogs.filter(l => l.createdAt >= wk.start.getTime() && l.createdAt <= new Date(wk.end).setHours(23,59,59,999)).reduce((s, l) => s + l.value, 0)
+      );
+      return { data, labels: weeks.map(wk => wk.label) };
+    }
+
+    // year
+    const y = now.getFullYear() + offset;
+    const data = Array.from({ length: 12 }, (_, i) =>
+      currentLogs.filter(l => {
+        const d = new Date(l.createdAt);
+        return d.getFullYear() === y && d.getMonth() === i;
+      }).reduce((s, l) => s + l.value, 0)
+    );
+    return { data, labels: monthLabels };
+  }
+
+  const { data: chartData, labels: chartLabels } = getChartData();
+  const hasChartData = chartData.some(v => v > 0);
+
+  // Overview for "Tất cả" mode
+  const activeDays = new Set(currentLogs.map(l => getDateString(new Date(l.createdAt)))).size;
+  const totalSets = currentLogs.length;
+
+  // Exercise breakdown for "Tất cả"
+  const exerciseBreakdown = exercises.map(ex => {
+    const exLogs = currentLogs.filter(l => l.exerciseId === ex.id);
+    const total = exLogs.reduce((s, l) => s + l.value, 0);
+    const unit = ex.unit === 'reps' ? t.reps
+      : ex.unit === 'duration' ? t.seconds
+      : ex.unit === 'minutes' ? t.minutes
+      : ex.unit === 'km' ? t.km
+      : t.meters;
+    return { ex, total, unit };
+  }).filter(e => e.total > 0).sort((a, b) => b.total - a.total);
+  const maxBreakdown = Math.max(...exerciseBreakdown.map(e => e.total), 1);
+
+  // Comparison label
+  const prevPeriodLabel = range === 'week' ? t.weeksAgo
+    : range === 'month' ? t.monthsAgo
+    : t.yearsAgo;
+
+  const filterItems = [
+    { id: 'all', icon: '★', name: t.allExercises },
+    ...exercises.map(ex => ({ id: ex.id, icon: ex.icon, name: ex.name })),
   ];
-
-  const timeFilters: { id: TimeFilter; label: string }[] = [
-    { id: '3m', label: t.timeRange3m },
-    { id: '6m', label: t.timeRange6m },
-    { id: '1y', label: t.timeRange1y },
-    { id: 'all', label: t.all },
-  ];
-
-  const milestones = [1000, 5000, 10000, 25000, 50000];
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.bg }]}>
@@ -127,219 +264,167 @@ export default function StatsScreen() {
           { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_HEIGHT + 24 },
         ]}
       >
-        {/* Header */}
         <Text style={[styles.title, { color: colors.ink }]}>{t.statsTitle}</Text>
         <Text style={[styles.subtitle, { color: colors.ink2 }]}>{t.statsSubtitle}</Text>
 
-        {/* Exercise filter */}
-        <ScrollView
-          horizontal showsHorizontalScrollIndicator={false}
-          style={styles.exFilterScroll}
-          contentContainerStyle={styles.exFilterContent}
-        >
-          {exerciseFilters.map(ex => {
-            const active = ex.id === selectedEx;
-            return (
-              <TouchableOpacity
-                key={ex.id}
-                style={[
-                  styles.exChip,
-                  {
-                    backgroundColor: active ? colors.accent : 'transparent',
-                    borderColor: active ? colors.accent : colors.line,
-                    borderWidth: active ? 0 : 1,
-                  },
-                ]}
-                onPress={() => setSelectedEx(ex.id)}
-              >
-                <Text style={[styles.exChipText, {
-                  color: active ? '#fff' : colors.ink2,
-                }]}>
-                  {ex.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <ExerciseFilterBar items={filterItems} selectedId={selectedFilter} onSelect={setSelectedFilter} />
+        <TimeRangeTabs range={range} onChange={setRange} />
+        <PeriodNav
+          label={periodLabel}
+          sub={periodSub}
+          isPresent={offset === 0}
+          onPrev={() => setOffset(o => o - 1)}
+          onNext={() => setOffset(o => Math.min(0, o + 1))}
+        />
 
-        {/* Time range */}
-        <View style={[styles.timeGrid, { backgroundColor: colors.line }]}>
-          {timeFilters.map(f => {
-            const active = f.id === timeFilter;
-            return (
-              <TouchableOpacity
-                key={f.id}
-                style={[styles.timeBtn, active && { backgroundColor: colors.card }]}
-                onPress={() => setTimeFilter(f.id)}
-              >
-                <Text style={[styles.timeBtnText, {
-                  color: active ? colors.ink : colors.ink2,
-                  fontWeight: active ? '600' : '500',
-                }]}>
-                  {f.label}
+        {loading ? (
+          <ActivityIndicator color={colors.accent} style={{ marginTop: 32 }} />
+        ) : selectedFilter === 'all' ? (
+          /* ── TẤT CẢ: Overview dashboard ── */
+          <>
+            {/* Overview stats */}
+            <View style={styles.overviewRow}>
+              <View style={styles.overviewCell}>
+                <Text style={[styles.overviewValue, { color: colors.ink }]}>{activeDays}</Text>
+                <Text style={[styles.overviewLabel, { color: colors.ink2 }]}>{t.activeDays}</Text>
+              </View>
+              <View style={[styles.overviewDivider, { backgroundColor: colors.line }]} />
+              <View style={styles.overviewCell}>
+                <Text style={[styles.overviewValue, { color: colors.ink }]}>{totalSets}</Text>
+                <Text style={[styles.overviewLabel, { color: colors.ink2 }]}>{t.totalSets}</Text>
+              </View>
+              <View style={[styles.overviewDivider, { backgroundColor: colors.line }]} />
+              <View style={styles.overviewCell}>
+                <Text style={[styles.overviewValue, { color: currentTotal > prevTotal ? colors.accent : colors.ink }]}>
+                  {diff >= 0 ? '+' : ''}{diffPct}%
                 </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Chart */}
-        <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
-          {t.trendChart.toUpperCase()}
-        </Text>
-        <View style={styles.chartHeader}>
-          <Text style={[styles.chartValue, { color: colors.ink }]}>{thisWeekTotal}</Text>
-          <Text style={[styles.chartSub, { color: colors.ink2 }]}>{t.weekThis}</Text>
-          {weekDiff !== 0 && (
-            <View style={styles.diffBadge}>
-              <Icon
-                name={weekDiff > 0 ? 'arrowUp' : 'arrowDn'}
-                size={12}
-                stroke={colors.accent}
-                sw={2.2}
-              />
-              <Text style={[styles.diffText, { color: colors.accent }]}>
-                {weekDiff > 0 ? '+' : ''}{weekDiff}%
-              </Text>
+                <Text style={[styles.overviewLabel, { color: colors.ink2 }]}>{t.vsPrev}</Text>
+              </View>
             </View>
-          )}
-        </View>
 
-        {weeklyTotals.length >= 2 ? (
-          <LineChart
-            data={weeklyTotals}
-            labels={[
-              weeklyTotals.length > 0 ? `${weeklyTotals.length} ${t.weeksAgo}` : '',
-              '',
-              '',
-              t.weekNow,
-            ]}
-          />
+            {/* Exercise breakdown */}
+            {exerciseBreakdown.length > 0 ? (
+              <View style={[styles.section, { borderTopColor: colors.line }]}>
+                <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>{t.exerciseBreakdown.toUpperCase()}</Text>
+                {exerciseBreakdown.map(({ ex, total, unit }) => (
+                  <View key={ex.id} style={styles.breakdownRow}>
+                    <Text style={styles.breakdownIcon}>{ex.icon}</Text>
+                    <View style={styles.breakdownInfo}>
+                      <View style={styles.breakdownTop}>
+                        <Text style={[styles.breakdownName, { color: colors.ink }]}>{ex.name}</Text>
+                        <Text style={[styles.breakdownVal, { color: ex.color }]}>
+                          {total} {unit}
+                        </Text>
+                      </View>
+                      <View style={[styles.barBg, { backgroundColor: colors.line }]}>
+                        <View style={[styles.barFg, {
+                          width: `${Math.round((total / maxBreakdown) * 100)}%`,
+                          backgroundColor: ex.color,
+                        }]} />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={[styles.emptyBox, { borderColor: colors.line }]}>
+                <Text style={[styles.emptyText, { color: colors.ink2 }]}>{t.noData}</Text>
+              </View>
+            )}
+          </>
         ) : (
-          <View style={[styles.emptyChart, { borderColor: colors.line }]}>
-            <Text style={[styles.emptyText, { color: colors.ink2 }]}>{t.noData}</Text>
-          </View>
+          /* ── CỤ THỂ 1 MÔN: Deep dive ── */
+          <>
+            {/* Summary stats */}
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.total.toUpperCase()}</Text>
+                <View style={styles.summaryValueRow}>
+                  <Text style={[styles.summaryValue, { color: colors.ink }]}>{currentTotal || '—'}</Text>
+                  {currentTotal > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitLabel}</Text>}
+                </View>
+              </View>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.avgPerDay.toUpperCase()}</Text>
+                <View style={styles.summaryValueRow}>
+                  <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
+                  {avg > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitLabel}</Text>}
+                </View>
+              </View>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.best.toUpperCase()}</Text>
+                <View style={styles.summaryValueRow}>
+                  <Text style={[styles.summaryValue, { color: colors.accent }]}>{best || '—'}</Text>
+                  {best > 0 && <Text style={[styles.summaryUnit, { color: colors.accent }]}>{unitLabel}</Text>}
+                </View>
+              </View>
+            </View>
+
+            {/* Trend chart */}
+            <View style={[styles.section, { borderTopColor: colors.line }]}>
+              <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>{t.trendChart.toUpperCase()}</Text>
+              {hasChartData ? (
+                <LineChart data={chartData} labels={chartLabels} />
+              ) : (
+                <View style={[styles.emptyBox, { borderColor: colors.line }]}>
+                  <Text style={[styles.emptyText, { color: colors.ink2 }]}>{t.noData}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Period comparison */}
+            <View style={[styles.section, { borderTopColor: colors.line }]}>
+              <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>{t.compareTitle.toUpperCase()}</Text>
+              <View style={styles.compareRow}>
+                <View style={styles.compareCell}>
+                  <Text style={[styles.compareLabel, { color: colors.ink2 }]}>1 {prevPeriodLabel}</Text>
+                  <View style={styles.summaryValueRow}>
+                    <Text style={[styles.compareValue, { color: colors.ink }]}>{prevTotal || '—'}</Text>
+                    {prevTotal > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitLabel}</Text>}
+                  </View>
+                </View>
+                <View style={styles.compareCell}>
+                  <Text style={[styles.compareLabel, { color: colors.ink2 }]}>{periodSub}</Text>
+                  <View style={styles.summaryValueRow}>
+                    <Text style={[styles.compareValue, { color: colors.ink }]}>{currentTotal || '—'}</Text>
+                    {currentTotal > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitLabel}</Text>}
+                  </View>
+                </View>
+              </View>
+              {currentTotal > 0 && prevTotal > 0 && (
+                <View style={[styles.diffCard, { backgroundColor: colors.accentSoft }]}>
+                  <Text style={[styles.diffText, { color: colors.accentInk }]}>
+                    {diff >= 0 ? '↑' : '↓'} {diff >= 0 ? '+' : ''}{diff} {unitLabel} ({diffPct >= 0 ? '+' : ''}{diffPct}%) {t.vsLastWeek}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Records */}
+            <View style={[styles.section, { borderTopColor: colors.line }]}>
+              <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>{t.recordsTitle.toUpperCase()}</Text>
+              {[
+                {
+                  label: range === 'year' ? t.bestMonth : t.recordDay,
+                  val: best > 0 ? `${best} ${unitLabel}` : '—',
+                },
+                {
+                  label: t.total,
+                  val: currentTotal > 0 ? `${currentTotal} ${unitLabel}` : '—',
+                },
+              ].map((r, i, arr) => (
+                <View key={i} style={[styles.recordRow, {
+                  borderBottomColor: colors.line,
+                  borderBottomWidth: i < arr.length - 1 ? StyleSheet.hairlineWidth : 0,
+                }]}>
+                  <Text style={[styles.recordLabel, { color: colors.ink }]}>{r.label}</Text>
+                  <Text style={[styles.recordVal, { color: colors.ink }]}>{r.val}</Text>
+                </View>
+              ))}
+            </View>
+          </>
         )}
-
-        {/* Compare months */}
-        <View style={[styles.section, { borderTopColor: colors.line }]}>
-          <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
-            {t.compareTitle.toUpperCase()}
-          </Text>
-          <View style={styles.compareRow}>
-            <View style={styles.compareCell}>
-              <Text style={[styles.compareLabel, { color: colors.ink2 }]}>{t.lastMonth}</Text>
-              <Text style={[styles.compareValue, { color: colors.ink }]}>
-                {lastMonthTotal.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.compareCell}>
-              <Text style={[styles.compareLabel, { color: colors.ink2 }]}>{t.thisMonthLabel}</Text>
-              <Text style={[styles.compareValue, { color: colors.ink }]}>
-                {thisMonthTotal.toLocaleString()}
-              </Text>
-            </View>
-          </View>
-          {monthDiff !== 0 && (
-            <View style={[styles.diffCard, { backgroundColor: colors.accentSoft }]}>
-              <Icon
-                name={monthDiff > 0 ? 'arrowUp' : 'arrowDn'}
-                size={14}
-                stroke={colors.accentInk}
-                sw={2.2}
-              />
-              <Text style={[styles.diffCardText, { color: colors.accentInk }]}>
-                {monthDiff > 0 ? '+' : ''}{monthDiff} reps ({monthPct > 0 ? '+' : ''}{monthPct}%) {t.vsLastWeek}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Milestones */}
-        <View style={[styles.section, { borderTopColor: colors.line }]}>
-          <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
-            {t.milestonesTitle.toUpperCase()}
-          </Text>
-          <Text style={[styles.milestoneLabel, { color: colors.ink2 }]}>Tổng tích luỹ</Text>
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalValue, { color: colors.ink }]}>
-              {allTimeTotal.toLocaleString()}
-            </Text>
-            <Text style={[styles.totalUnit, { color: colors.ink2 }]}> {t.reps}</Text>
-          </View>
-
-          {/* Progress bar to next milestone */}
-          {(() => {
-            const next = milestones.find(m => m > allTimeTotal) ?? milestones.at(-1)!;
-            const pct = Math.min((allTimeTotal / next) * 100, 100);
-            return (
-              <>
-                <View style={styles.nextRow}>
-                  <Text style={[styles.nextLabel, { color: colors.ink2 }]}>
-                    {t.nextMilestone} · {next.toLocaleString()}
-                  </Text>
-                  <Text style={[styles.nextPct, { color: colors.ink }]}>
-                    {Math.round(pct)}%
-                  </Text>
-                </View>
-                <View style={[styles.progressBg, { backgroundColor: colors.line }]}>
-                  <View style={[styles.progressFg, { width: `${pct}%`, backgroundColor: colors.accent }]} />
-                </View>
-              </>
-            );
-          })()}
-
-          <View style={styles.milestonePills}>
-            {milestones.slice(0, 4).map(m => {
-              const done = allTimeTotal >= m;
-              return (
-                <View
-                  key={m}
-                  style={[
-                    styles.milestonePill,
-                    {
-                      backgroundColor: done ? colors.accentSoft : 'transparent',
-                      borderColor: done ? 'transparent' : colors.line,
-                      borderWidth: done ? 0 : 1,
-                    },
-                  ]}
-                >
-                  {done && <Icon name="check" size={10} stroke={colors.accent} sw={2.5} />}
-                  <Text style={[styles.milestonePillText, {
-                    color: done ? colors.accent : colors.ink2,
-                  }]}>
-                    {(m / 1000).toFixed(0)}k
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Records */}
-        <View style={[styles.section, { borderTopColor: colors.line }]}>
-          <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>
-            {t.recordsTitle.toUpperCase()}
-          </Text>
-          {[
-            { label: t.recordSet, val: bestSet > 0 ? `${bestSet} ${t.reps}` : '—' },
-            { label: t.recordDay, val: bestDay > 0 ? `${bestDay} ${t.reps}` : '—' },
-            { label: t.recordWeek, val: bestWeek > 0 ? `${bestWeek} ${t.reps}` : '—' },
-          ].map((r, i, arr) => (
-            <View
-              key={i}
-              style={[styles.recordRow, {
-                borderBottomColor: colors.line,
-                borderBottomWidth: i < arr.length - 1 ? StyleSheet.hairlineWidth : 0,
-              }]}
-            >
-              <Text style={[styles.recordLabel, { color: colors.ink }]}>{r.label}</Text>
-              <Text style={[styles.recordVal, { color: colors.ink }]}>{r.val}</Text>
-            </View>
-          ))}
-        </View>
       </ScrollView>
-
       <TabBar />
     </View>
   );
@@ -349,70 +434,58 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   statusBarCover: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   content: { paddingHorizontal: 24 },
-  title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8, marginBottom: 4 },
-  subtitle: { fontSize: 13, marginBottom: 24 },
-  exFilterScroll: { marginBottom: 14 },
-  exFilterContent: { gap: 8, paddingBottom: 4 },
-  exChip: {
-    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 18,
+  title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8 },
+  subtitle: { fontSize: 13, marginTop: 4, marginBottom: 24 },
+
+  // Overview
+  overviewRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 20, marginBottom: 8,
   },
-  exChipText: { fontSize: 13, fontWeight: '500' },
-  timeGrid: {
-    flexDirection: 'row', gap: 2, padding: 3,
-    borderRadius: 10, marginBottom: 28,
-  },
-  timeBtn: {
-    flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center',
-  },
-  timeBtnText: { fontSize: 12 },
-  sectionLabel: {
-    fontSize: 11, fontWeight: '600', letterSpacing: 0.8, marginBottom: 8,
-  },
-  chartHeader: {
-    flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 14,
-  },
-  chartValue: { fontSize: 32, fontWeight: '300', letterSpacing: -1, lineHeight: 36 },
-  chartSub: { fontSize: 13 },
-  diffBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 'auto',
-  },
-  diffText: { fontSize: 13, fontWeight: '500' },
-  emptyChart: {
-    height: 120, borderRadius: 12, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  emptyText: { fontSize: 14 },
-  section: {
-    paddingTop: 24, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 32,
-  },
+  overviewCell: { flex: 1, alignItems: 'center' },
+  overviewDivider: { width: StyleSheet.hairlineWidth, height: 40 },
+  overviewValue: { fontSize: 32, fontWeight: '300', letterSpacing: -1 },
+  overviewLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, marginTop: 4 },
+
+  // Breakdown
+  breakdownRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  breakdownIcon: { fontSize: 22, width: 32, textAlign: 'center' },
+  breakdownInfo: { flex: 1 },
+  breakdownTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  breakdownName: { fontSize: 14, fontWeight: '500' },
+  breakdownVal: { fontSize: 14, fontWeight: '600' },
+  barBg: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  barFg: { height: '100%', borderRadius: 2 },
+
+  // Summary stats
+  summaryRow: { flexDirection: 'row', marginBottom: 8 },
+  summaryCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
+  summaryLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.6, textAlign: 'center' },
+  summaryValueRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: 4, justifyContent: 'center' },
+  summaryValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8 },
+  summaryUnit: { fontSize: 13, fontWeight: '400', marginBottom: 3 },
+
+  // Section
+  section: { paddingTop: 24, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 8 },
+  sectionLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: 16 },
+
+  // Compare
   compareRow: { flexDirection: 'row', gap: 20, marginBottom: 16 },
   compareCell: { flex: 1 },
   compareLabel: { fontSize: 11, marginBottom: 4 },
-  compareValue: { fontSize: 22, fontWeight: '400', letterSpacing: -0.3 },
-  diffCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    padding: 10, borderRadius: 10,
-  },
-  diffCardText: { fontSize: 13, fontWeight: '500', flex: 1 },
-  milestoneLabel: { fontSize: 13, marginBottom: 6 },
-  totalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 0, marginBottom: 18 },
-  totalValue: { fontSize: 44, fontWeight: '300', letterSpacing: -1.5, lineHeight: 48 },
-  totalUnit: { fontSize: 13 },
-  nextRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  nextLabel: { fontSize: 12 },
-  nextPct: { fontSize: 12, fontWeight: '500' },
-  progressBg: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 14 },
-  progressFg: { height: '100%', borderRadius: 3 },
-  milestonePills: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  milestonePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12,
-  },
-  milestonePillText: { fontSize: 11, fontWeight: '500' },
+  compareValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8 },
+  diffCard: { padding: 12, borderRadius: 10 },
+  diffText: { fontSize: 13, fontWeight: '500' },
+
+  // Records
   recordRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
     paddingVertical: 14,
   },
   recordLabel: { fontSize: 14 },
   recordVal: { fontSize: 17, fontWeight: '500' },
+
+  // Empty
+  emptyBox: { height: 100, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyText: { fontSize: 14 },
 });

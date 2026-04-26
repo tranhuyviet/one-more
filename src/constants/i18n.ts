@@ -133,6 +133,13 @@ const vi = {
   recordWeek: '1 tuần nhiều nhất',
   recordStreak: 'Chuỗi ngày dài nhất',
 
+  // Stats screen extra
+  activeDays: 'ngày hoạt động',
+  totalSets: 'set đã log',
+  vsPrev: 'so kỳ trước',
+  exerciseBreakdown: 'các môn trong kỳ',
+  bestMonth: 'Tốt nhất / tháng',
+
   // History screen
   historyTitle: 'Lịch sử',
   historySubtitle: 'Nhìn lại hành trình rèn luyện',
@@ -307,6 +314,12 @@ const en: typeof vi = {
   recordDay: 'Best single day',
   recordWeek: 'Best single week',
   recordStreak: 'Longest streak',
+
+  activeDays: 'active days',
+  totalSets: 'sets logged',
+  vsPrev: 'vs prev period',
+  exerciseBreakdown: 'exercises this period',
+  bestMonth: 'Best month',
 
   historyTitle: 'History',
   historySubtitle: 'Review your training journey',
