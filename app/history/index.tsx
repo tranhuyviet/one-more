@@ -10,7 +10,7 @@ import { useExerciseStore } from '@/store/useExerciseStore';
 import { useLogStore } from '@/store/useLogStore';
 import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
-import SetRow from '@/components/exercise/SetRow';
+import DayDetail from '@/components/exercise/DayDetail';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
 import { ExerciseLog, Exercise } from '@/types';
 import { getWeekDates, getDateString, aggregateDailyStats } from '@/firebase/logs';
@@ -112,8 +112,6 @@ export default function HistoryScreen() {
     { id: 'all', icon: '✦', name: t.allExercises },
     ...exercises.map(ex => ({ id: ex.id, icon: ex.icon, name: ex.name })),
   ];
-
-  const selectedDayData = selectedDay ? dayEntries.find(d => d.date === selectedDay) : null;
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.bg }]}>
@@ -238,133 +236,91 @@ export default function HistoryScreen() {
             const isSelected = selectedDay === entry.date;
 
             return (
-              <TouchableOpacity
-                key={entry.date}
-                style={[
-                  styles.dayRow,
-                  {
-                    backgroundColor: isSelected ? colors.accentSoft : 'transparent',
-                    marginHorizontal: -12,
-                    paddingHorizontal: 12,
-                    borderRadius: 12,
-                    borderBottomColor: !isSelected && i < dayEntries.length - 1 ? colors.line : 'transparent',
-                    borderBottomWidth: !isSelected && i < dayEntries.length - 1 ? StyleSheet.hairlineWidth : 0,
-                    opacity: isEmpty ? 0.4 : 1,
-                  },
-                ]}
-                onPress={() => setSelectedDay(isSelected ? null : entry.date)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.dayMeta}>
-                  <Text style={[styles.dayName, {
-                    color: isSelected ? colors.accent : colors.ink2,
-                    fontWeight: isSelected ? '700' : '400',
-                  }]}>
-                    {entry.dayLabel}
-                  </Text>
-                  <Text style={[styles.dayDate, {
-                    color: isSelected ? colors.accentInk : colors.ink,
-                    fontWeight: isSelected ? '600' : '400',
-                  }]}>
-                    {entry.dateLabel}
-                  </Text>
-                </View>
+              <View key={entry.date}>
+                <TouchableOpacity
+                  style={[
+                    styles.dayRow,
+                    {
+                      backgroundColor: isSelected ? colors.accentSoft : 'transparent',
+                      marginHorizontal: -12,
+                      paddingHorizontal: 12,
+                      borderRadius: isSelected ? 12 : 0,
+                      borderBottomColor: !isSelected && i < dayEntries.length - 1 ? colors.line : 'transparent',
+                      borderBottomWidth: !isSelected && i < dayEntries.length - 1 ? StyleSheet.hairlineWidth : 0,
+                      opacity: isEmpty ? 0.4 : 1,
+                    },
+                  ]}
+                  onPress={() => setSelectedDay(isSelected ? null : entry.date)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.dayMeta}>
+                    <Text style={[styles.dayName, {
+                      color: isSelected ? colors.accent : colors.ink2,
+                      fontWeight: isSelected ? '700' : '400',
+                    }]}>
+                      {entry.dayLabel}
+                    </Text>
+                    <Text style={[styles.dayDate, {
+                      color: isSelected ? colors.accentInk : colors.ink,
+                      fontWeight: isSelected ? '600' : '400',
+                    }]}>
+                      {entry.dateLabel}
+                    </Text>
+                  </View>
 
-                <View style={styles.dayContent}>
-                  <View style={styles.exBadges}>
-                    {entry.exercises.slice(0, 4).map((e, j) => (
-                      <View
-                        key={j}
-                        style={[styles.exBadge, {
-                          backgroundColor: isSelected ? colors.accentLine : colors.card,
-                        }]}
-                      >
-                        <Text style={styles.exBadgeIcon}>{e.exercise.icon}</Text>
-                        <Text style={[styles.exBadgeVal, {
-                          color: isSelected ? colors.accentInk : colors.ink2,
-                        }]}>
-                          {e.total}
+                  <View style={styles.dayContent}>
+                    <View style={styles.exBadges}>
+                      {entry.exercises.slice(0, 4).map((e, j) => (
+                        <View
+                          key={j}
+                          style={[styles.exBadge, {
+                            backgroundColor: isSelected ? colors.accentLine : colors.card,
+                          }]}
+                        >
+                          <Text style={styles.exBadgeIcon}>{e.exercise.icon}</Text>
+                          <Text style={[styles.exBadgeVal, {
+                            color: isSelected ? colors.accentInk : colors.ink2,
+                          }]}>
+                            {e.total}
+                          </Text>
+                        </View>
+                      ))}
+                      {isEmpty && (
+                        <Text style={[styles.emptyLabel, { color: colors.ink2 }]}>
+                          {t.noWorkout}
                         </Text>
-                      </View>
-                    ))}
-                    {isEmpty && (
-                      <Text style={[styles.emptyLabel, { color: colors.ink2 }]}>
-                        {t.noWorkout}
-                      </Text>
-                    )}
+                      )}
+                    </View>
+                    <View style={[styles.progressBar, { backgroundColor: isSelected ? colors.accentLine : colors.line }]}>
+                      <View style={[styles.progressFill, {
+                        width: `${Math.min((totalAll / 250) * 100, 100)}%`,
+                        backgroundColor: entry.isToday || isSelected ? colors.accent : colors.ink,
+                      }]} />
+                    </View>
                   </View>
-                  <View style={[styles.progressBar, { backgroundColor: isSelected ? colors.accentLine : colors.line }]}>
-                    <View style={[styles.progressFill, {
-                      width: `${Math.min((totalAll / 250) * 100, 100)}%`,
-                      backgroundColor: entry.isToday || isSelected ? colors.accent : colors.ink,
-                    }]} />
-                  </View>
-                </View>
 
-                <View style={styles.dayRight}>
-                  <Text style={[styles.dayTotal, {
-                    color: isSelected ? colors.accentInk : colors.ink,
-                  }]}>
-                    {totalAll || '—'}
-                  </Text>
-                  {isSelected && (
-                    <Icon name="chev" size={14} stroke={colors.accent} sw={2} />
-                  )}
-                </View>
-              </TouchableOpacity>
+                  <View style={styles.dayRight}>
+                    <Text style={[styles.dayTotal, {
+                      color: isSelected ? colors.accentInk : colors.ink,
+                    }]}>
+                      {totalAll || '—'}
+                    </Text>
+                    <View style={{ transform: [{ rotate: isSelected ? '90deg' : '0deg' }] }}>
+                      <Icon name="chev" size={14} stroke={isSelected ? colors.accent : (isEmpty ? colors.line : colors.ink2)} sw={2} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {isSelected && entry.exercises.length > 0 && (
+                  <View style={styles.inlineDetail}>
+                    <DayDetail exercises={entry.exercises} />
+                  </View>
+                )}
+              </View>
             );
           })
         )}
 
-        {/* Selected day detail */}
-        {selectedDayData && selectedDayData.exercises.length > 0 && (
-          <View style={{ marginTop: 32 }}>
-            <View style={styles.detailHeader}>
-              <Text style={[styles.detailTitle, { color: colors.ink }]}>
-                {selectedDayData.isToday ? t.today : selectedDayData.dayLabel}
-              </Text>
-              <Text style={[styles.detailDate, { color: colors.ink2 }]}>
-                {selectedDayData.dateLabel}.{new Date().getFullYear()}
-              </Text>
-            </View>
-
-            {selectedDayData.exercises.map(ex => (
-              <View key={ex.exercise.id} style={{ marginBottom: 24 }}>
-                <View style={[styles.exDetailHeader, { backgroundColor: colors.accentSoft }]}>
-                  <View style={styles.exDetailLeft}>
-                    <Text style={styles.exDetailIcon}>{ex.exercise.icon}</Text>
-                    <View>
-                      <Text style={[styles.exDetailName, { color: colors.accentInk }]}>{ex.exercise.name}</Text>
-                      <Text style={[styles.exDetailSets, { color: colors.accent }]}>
-                        {ex.sets} {t.sets}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.exDetailTotal}>
-                    <Text style={[styles.exDetailValue, { color: colors.accentInk }]}>{ex.total}</Text>
-                    <Text style={[styles.exDetailUnit, { color: colors.accent }]}>
-                      {ex.exercise.unit === 'reps' ? t.reps : t.seconds}
-                    </Text>
-                  </View>
-                </View>
-                {ex.logs.map((log, i) => {
-                  const time = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  return (
-                    <SetRow
-                      key={log.id}
-                      index={i}
-                      time={time}
-                      value={log.value}
-                      note={log.note}
-                      unit={ex.exercise.unit}
-                      isLast={i === ex.logs.length - 1}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        )}
       </ScrollView>
 
       <TabBar />
@@ -432,20 +388,5 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', borderRadius: 1 },
   dayRight: { width: 64, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 4 },
   dayTotal: { fontSize: 22, fontWeight: '300', letterSpacing: -0.5 },
-  detailHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16,
-  },
-  detailTitle: { fontSize: 22, fontWeight: '500', letterSpacing: -0.4 },
-  detailDate: { fontSize: 13, fontVariant: ['tabular-nums'] },
-  exDetailHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderRadius: 14, marginBottom: 10,
-  },
-  exDetailLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  exDetailIcon: { fontSize: 22 },
-  exDetailName: { fontSize: 15, fontWeight: '600' },
-  exDetailSets: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, marginTop: 2 },
-  exDetailTotal: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  exDetailValue: { fontSize: 30, fontWeight: '300', letterSpacing: -1, lineHeight: 34 },
-  exDetailUnit: { fontSize: 12, marginBottom: 2 },
+  inlineDetail: { paddingBottom: 12 },
 });

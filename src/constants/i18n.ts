@@ -25,6 +25,7 @@ const vi = {
   km: 'km',
   meters: 'm',
   sets: 'set',
+  addSet: 'Thêm set',
 
   // Exercise names (defaults)
   pushup: 'Hít đất',
@@ -192,6 +193,7 @@ const en: typeof vi = {
   km: 'km',
   meters: 'm',
   sets: 'sets',
+  addSet: 'Add set',
 
   pushup: 'Push-ups',
   pullup: 'Pull-ups',

@@ -10,13 +10,13 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useExerciseStore } from '@/store/useExerciseStore';
 import { useLogStore } from '@/store/useLogStore';
-import { Unit } from '@/types';
 import Icon from '@/components/ui/Icon';
 import TabBar from '@/components/ui/TabBar';
 import WeekGrid from '@/components/charts/WeekGrid';
-import SetRow from '@/components/exercise/SetRow';
+import DayDetail from '@/components/exercise/DayDetail';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
 import { getWeekDates, getDateString, getLogs } from '@/firebase/logs';
+import { Unit } from '@/types';
 
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -165,59 +165,12 @@ export default function HomeScreen() {
 
               if (isExp && hasData) {
                 return (
-                  <View key={ex.id} style={[styles.exCard, { backgroundColor: `${ex.color}15` }]}>
-                    {/* Card header — tap to collapse or go to log */}
-                    <TouchableOpacity
-                      style={styles.exCardHeader}
-                      onPress={() => setExpanded(null)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.exIconBadge, { backgroundColor: `${ex.color}28` }]}>
-                        <Text style={styles.exIconText}>{ex.icon}</Text>
-                      </View>
-                      <View style={styles.exInfo}>
-                        <Text style={[styles.exName, { color: colors.ink, fontWeight: '600' }]}>{ex.name}</Text>
-                        <Text style={[styles.exSets, { color: ex.color }]}>{stats!.sets} {t.sets}</Text>
-                      </View>
-                      <View style={styles.exValueWrap}>
-                        <Text style={[styles.exTotal, { color: colors.ink }]}>{total}</Text>
-                        <Text style={[styles.exUnit, { color: ex.color }]}>{unitStr}</Text>
-                      </View>
-                      <View style={[styles.chevWrap, { transform: [{ rotate: '90deg' }] }]}>
-                        <Icon name="chev" size={13} stroke={ex.color} sw={2} />
-                      </View>
-                    </TouchableOpacity>
-
-                    {/* Divider + set rows */}
-                    <View style={[styles.cardDivider, { backgroundColor: `${ex.color}30` }]} />
-                    <View style={styles.exCardDetail}>
-                      {stats!.logs.map((log, j) => {
-                        const logTime = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        return (
-                          <SetRow
-                            key={log.id}
-                            index={j}
-                            time={logTime}
-                            value={log.value}
-                            note={log.note}
-                            unit={ex.unit as Unit}
-                            isLast={j === stats!.logs.length - 1}
-                            accentColors={{ bg: `${ex.color}20`, text: ex.color, border: `${ex.color}30` }}
-                          />
-                        );
-                      })}
-                    </View>
-
-                    {/* Add more button */}
-                    <TouchableOpacity
-                      style={[styles.addMoreBtn, { borderTopColor: `${ex.color}30` }]}
-                      onPress={() => router.push(`/log/${ex.id}`)}
-                      activeOpacity={0.7}
-                    >
-                      <Icon name="plus" size={14} stroke={ex.color} sw={2.5} />
-                      <Text style={[styles.addMoreText, { color: ex.color }]}>Thêm set</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <DayDetail
+                    key={ex.id}
+                    exercises={[{ exercise: ex, total: stats!.total, sets: stats!.sets, logs: stats!.logs }]}
+                    onHeaderPress={() => setExpanded(null)}
+                    onAddMore={id => router.push(`/log/${id}`)}
+                  />
                 );
               }
 
@@ -280,27 +233,12 @@ const styles = StyleSheet.create({
   emptyLink: { fontSize: 14, fontWeight: '600' },
   exList: { marginBottom: 36 },
 
-  // Expanded card
-  exCard: { borderRadius: 14, marginBottom: 10, overflow: 'hidden' },
-  exCardHeader: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
-  cardDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
-  exCardDetail: { paddingHorizontal: 12, paddingBottom: 4 },
-  addMoreBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  addMoreText: { fontSize: 13, fontWeight: '600' },
-
   // Collapsed row
   exRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth },
 
-  // Shared
   exIconBadge: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   exIconText: { fontSize: 16, lineHeight: 20 },
-  exInfo: { flex: 1 },
   exName: { flex: 1, fontSize: 15, fontWeight: '500' },
-  exSets: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, marginTop: 3 },
   exValueWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   exTotal: { fontSize: 32, fontWeight: '300', letterSpacing: -1, lineHeight: 36 },
   exUnit: { fontSize: 12, marginBottom: 2 },
