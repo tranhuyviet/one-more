@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileStore } from '@/store/useProfileStore';
+import { useExerciseStore } from '@/store/useExerciseStore';
 import { onAuthChange } from '@/firebase/auth';
 import AppLogo from '@/components/ui/AppLogo';
 
@@ -26,13 +27,14 @@ export default function RootLayout() {
   const setUser = useAuthStore(s => s.setUser);
   const signIn = useAuthStore(s => s.signIn);
   const loadProfile = useProfileStore(s => s.loadProfile);
+  const loadExercises = useExerciseStore(s => s.loadExercises);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthChange(async (user) => {
       if (user) {
         setUser(user);
-        await loadProfile(user.uid);
+        await Promise.all([loadProfile(user.uid), loadExercises(user.uid)]);
       } else {
         await signIn();
       }

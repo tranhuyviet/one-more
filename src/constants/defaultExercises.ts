@@ -9,6 +9,14 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     muscleGroup: 'Ngực / Vai',
     sortOrder: 0,
   },
+  {
+    name: 'Nhảy dây',
+    icon: '🤸',
+    unit: 'reps',
+    color: '#C89A1A',
+    muscleGroup: 'Toàn thân',
+    sortOrder: 1,
+  },
 ];
 
 export const EXERCISE_ICON_OPTIONS = [
