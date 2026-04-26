@@ -16,7 +16,7 @@ import WeekGrid from '@/components/charts/WeekGrid';
 import DayDetail from '@/components/exercise/DayDetail';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
 import { getWeekDates, getDateString, getLogs } from '@/firebase/logs';
-import { Unit } from '@/types';
+import { Unit, ExerciseLog } from '@/types';
 
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -58,7 +58,9 @@ export default function HomeScreen() {
   const exercises = useExerciseStore(s => s.exercises);
   const { todayLogs, loadTodayLogs } = useLogStore();
   const [weekData, setWeekData] = React.useState<Record<string, number[]>>({});
+  const [weekLogs, setWeekLogs] = React.useState<Record<string, ExerciseLog[][]>>({});
   const [expanded, setExpanded] = React.useState<string | null>(null);
+  const [selectedWeekCell, setSelectedWeekCell] = React.useState<{ exId: string; dayIdx: number } | null>(null);
 
   useEffect(() => {
     if (authLoading || profileLoading) return;
@@ -84,6 +86,15 @@ export default function HomeScreen() {
       });
       return next;
     });
+    setWeekLogs(prev => {
+      const next: Record<string, ExerciseLog[][]> = {};
+      Object.keys(prev).forEach(exId => {
+        const updated = [...prev[exId]];
+        updated[todayIdx] = todayLogs.filter(l => l.exerciseId === exId);
+        next[exId] = updated;
+      });
+      return next;
+    });
   }, [todayLogs]);
 
   async function loadWeekData() {
@@ -94,13 +105,21 @@ export default function HomeScreen() {
     end.setHours(23, 59, 59, 999);
     const logs = await getLogs(user.uid, start, end.getTime());
     const byExDate: Record<string, number[]> = {};
-    exercises.forEach(ex => { byExDate[ex.id] = Array(7).fill(0); });
+    const byExDateLogs: Record<string, ExerciseLog[][]> = {};
+    exercises.forEach(ex => {
+      byExDate[ex.id] = Array(7).fill(0);
+      byExDateLogs[ex.id] = Array(7).fill(null).map(() => []);
+    });
     logs.forEach(log => {
       const logDate = getDateString(new Date(log.createdAt));
       const dayIdx = weekDates.findIndex(d => getDateString(d) === logDate);
-      if (dayIdx >= 0 && byExDate[log.exerciseId]) byExDate[log.exerciseId][dayIdx] += log.value;
+      if (dayIdx >= 0 && byExDate[log.exerciseId]) {
+        byExDate[log.exerciseId][dayIdx] += log.value;
+        byExDateLogs[log.exerciseId][dayIdx].push(log);
+      }
     });
     setWeekData(byExDate);
+    setWeekLogs(byExDateLogs);
   }
 
   if (authLoading || profileLoading) {
@@ -118,9 +137,22 @@ export default function HomeScreen() {
   const weekDayIndex = ((new Date().getDay() + 6) % 7);
   const today = new Date();
   const lang = profile?.language ?? 'vi';
-  const weekGridRows = exercises
-    .filter(ex => weekData[ex.id])
-    .map(ex => ({ icon: ex.icon, name: ex.name, color: ex.color, week: weekData[ex.id] ?? Array(7).fill(0) }));
+  const weekGridExercises = exercises.filter(ex => weekData[ex.id]);
+  const weekGridRows = weekGridExercises.map(ex => ({
+    icon: ex.icon, name: ex.name, color: ex.color, week: weekData[ex.id] ?? Array(7).fill(0),
+  }));
+
+  function handleWeekCellPress(rowIdx: number, dayIdx: number) {
+    const ex = weekGridExercises[rowIdx];
+    if (!ex) return;
+    setSelectedWeekCell(prev =>
+      prev?.exId === ex.id && prev?.dayIdx === dayIdx ? null : { exId: ex.id, dayIdx }
+    );
+  }
+
+  const selectedWeekRow = selectedWeekCell
+    ? weekGridExercises.findIndex(ex => ex.id === selectedWeekCell.exId)
+    : -1;
 
   function handleExPress(exId: string) {
     const stats = todayByEx[exId];
@@ -209,7 +241,30 @@ export default function HomeScreen() {
               <Text style={[styles.sectionLabel, { color: colors.ink2 }]}>{t.thisWeek.toUpperCase()}</Text>
               <Text style={[styles.sectionDate, { color: colors.ink2 }]}>{getWeekLabel(today, lang)}</Text>
             </View>
-            <WeekGrid rows={weekGridRows} todayIndex={weekDayIndex} />
+            <WeekGrid
+              rows={weekGridRows}
+              todayIndex={weekDayIndex}
+              onCellPress={handleWeekCellPress}
+              selectedCell={selectedWeekCell && selectedWeekRow >= 0
+                ? { row: selectedWeekRow, day: selectedWeekCell.dayIdx }
+                : undefined}
+            />
+            {selectedWeekCell && selectedWeekRow >= 0 && (() => {
+              const ex = weekGridExercises[selectedWeekRow];
+              const dayLogs = weekLogs[selectedWeekCell.exId]?.[selectedWeekCell.dayIdx] ?? [];
+              if (dayLogs.length === 0) return null;
+              const group = {
+                exercise: ex,
+                total: dayLogs.reduce((s, l) => s + l.value, 0),
+                sets: dayLogs.length,
+                logs: [...dayLogs].sort((a, b) => a.createdAt - b.createdAt),
+              };
+              return (
+                <View style={styles.weekDetailWrap}>
+                  <DayDetail exercises={[group]} />
+                </View>
+              );
+            })()}
           </>
         )}
       </ScrollView>
@@ -243,4 +298,5 @@ const styles = StyleSheet.create({
   exTotal: { fontSize: 32, fontWeight: '300', letterSpacing: -1, lineHeight: 36 },
   exUnit: { fontSize: 12, marginBottom: 2 },
   chevWrap: { marginLeft: 10 },
+  weekDetailWrap: { marginTop: 16 },
 });

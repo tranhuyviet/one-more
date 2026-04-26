@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -13,9 +13,11 @@ interface WeekGridRow {
 interface WeekGridProps {
   rows: WeekGridRow[];
   todayIndex?: number; // 0=Mon ... 6=Sun
+  onCellPress?: (rowIndex: number, dayIndex: number) => void;
+  selectedCell?: { row: number; day: number };
 }
 
-export default function WeekGrid({ rows, todayIndex = 6 }: WeekGridProps) {
+export default function WeekGrid({ rows, todayIndex = 6, onCellPress, selectedCell }: WeekGridProps) {
   const { colors } = useTheme();
   const { t } = useTranslation();
 
@@ -46,10 +48,7 @@ export default function WeekGrid({ rows, todayIndex = 6 }: WeekGridProps) {
       {rows.map((row, ri) => {
         const max = Math.max(...row.week, 1);
         return (
-          <View
-            key={ri}
-            style={[styles.dataRow, { borderTopColor: colors.line }]}
-          >
+          <View key={ri} style={[styles.dataRow, { borderTopColor: colors.line }]}>
             {/* Exercise label */}
             <View style={styles.labelCol}>
               <View style={[styles.iconBadge, { backgroundColor: `${row.color}20` }]}>
@@ -60,30 +59,49 @@ export default function WeekGrid({ rows, todayIndex = 6 }: WeekGridProps) {
             {/* Bars */}
             {row.week.map((v, i) => {
               const isToday = i === todayIndex;
+              const isSel = selectedCell?.row === ri && selectedCell?.day === i;
               const barH = v === 0 ? 0 : 6 + (v / max) * 30;
-              return (
-                <View key={i} style={styles.barCell}>
+              const barColor = isSel
+                ? row.color
+                : v === 0 ? colors.line : isToday ? colors.accent : colors.ink;
+              const textColor = isSel ? row.color : isToday ? colors.ink : colors.ink2;
+
+              const cellStyle = [
+                styles.barCell,
+                isSel ? { backgroundColor: `${row.color}12`, borderRadius: 6 } : null,
+              ];
+
+              const inner = (
+                <>
                   <Text style={[
                     styles.barValue,
-                    { color: isToday ? colors.ink : colors.ink2 },
-                    isToday && { fontWeight: '600' },
+                    { color: textColor },
+                    (isToday || isSel) && { fontWeight: '600' },
                   ]}>
                     {v > 0 ? v : '—'}
                   </Text>
-                  <View
-                    style={[
-                      styles.bar,
-                      {
-                        height: Math.max(barH, v > 0 ? 2 : 0),
-                        backgroundColor: v === 0
-                          ? colors.line
-                          : isToday ? colors.accent : colors.ink,
-                        borderRadius: 2,
-                      },
-                    ]}
-                  />
-                </View>
+                  <View style={[styles.bar, {
+                    height: Math.max(barH, v > 0 ? 2 : 0),
+                    backgroundColor: barColor,
+                    borderRadius: 2,
+                  }]} />
+                </>
               );
+
+              if (v > 0 && onCellPress) {
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={cellStyle}
+                    onPress={() => onCellPress(ri, i)}
+                    activeOpacity={0.7}
+                  >
+                    {inner}
+                  </TouchableOpacity>
+                );
+              }
+
+              return <View key={i} style={cellStyle}>{inner}</View>;
             })}
           </View>
         );
