@@ -16,7 +16,10 @@
     "build:ios": "eas build --profile preview --platform ios",
     "build:ios:prod": "eas build --profile production --platform ios",
     "testflight": "eas build --profile production --platform ios && eas submit --profile production --platform ios",
-    "upload:testflight": "eas submit --profile production --platform ios"
+    "upload:testflight": "eas submit --profile production --platform ios",
+    "migrate": "tsx migrations/runner.ts",
+    "migrate:status": "tsx migrations/runner.ts status",
+    "migrate:up": "tsx migrations/runner.ts up"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -34,6 +37,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "firebase-admin": "^13.8.0",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   },
   "private": true

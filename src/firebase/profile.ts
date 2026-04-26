@@ -4,31 +4,15 @@ import {
 import { db } from './config';
 import { Profile, Language, AppearanceMode } from '@/types';
 
-// Profile stored directly on the user document: users/{userId}
 function profileRef(userId: string) {
   return doc(db, 'users', userId);
 }
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const snap = await getDoc(profileRef(userId));
-  if (snap.exists()) {
-    const data = snap.data() as any;
-    if (data.name) {
-      if (typeof data.darkMode === 'boolean') {
-        data.darkMode = data.darkMode ? 'dark' : 'auto';
-      }
-      return data as Profile;
-    }
-  }
-
-  // Migrate from old path: users/{userId}/data/profile
-  const oldSnap = await getDoc(doc(db, 'users', userId, 'data', 'profile'));
-  if (!oldSnap.exists()) return null;
-  const data = oldSnap.data() as any;
-  if (typeof data.darkMode === 'boolean') {
-    data.darkMode = data.darkMode ? 'dark' : 'auto';
-  }
-  await setDoc(profileRef(userId), data, { merge: true });
+  if (!snap.exists()) return null;
+  const data = snap.data() as any;
+  if (!data.name) return null;
   return data as Profile;
 }
 
