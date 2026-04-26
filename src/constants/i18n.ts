@@ -101,7 +101,7 @@ const vi = {
 
   // Stats screen
   statsTitle: 'Thống kê',
-  statsSubtitle: 'Xu hướng & thành tựu',
+  statsSubtitle: 'Phân tích hiệu suất tập luyện',
   trendChart: 'Xu hướng reps / tuần',
   compareTitle: 'So sánh giai đoạn',
   insightsTitle: 'Nhận xét tự động',
@@ -150,6 +150,7 @@ const vi = {
   greeting: 'Xin chào',
   greetingAfternoon: 'Xin chào',
   greetingEvening: 'Xin chào',
+  homeSubtitle: 'Sẵn sàng cho buổi tập hôm nay chứ?',
   streak: 'Chuỗi ngày',
   personalBest: 'Kỷ lục',
   noData: 'Chưa có dữ liệu',
@@ -284,7 +285,7 @@ const en: typeof vi = {
   mgFull: 'Full body',
 
   statsTitle: 'Stats',
-  statsSubtitle: 'Trends & achievements',
+  statsSubtitle: 'Analyze your workout performance',
   trendChart: 'Reps / week trend',
   compareTitle: 'Compare periods',
   insightsTitle: 'Auto insights',
@@ -329,6 +330,7 @@ const en: typeof vi = {
   greeting: 'Hello',
   greetingAfternoon: 'Hello',
   greetingEvening: 'Hello',
+  homeSubtitle: 'Ready for today\'s workout?',
   streak: 'Streak',
   personalBest: 'Personal best',
   noData: 'No data yet',

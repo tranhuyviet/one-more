@@ -82,12 +82,6 @@ export default function ProfileScreen() {
     await setAppearance(user.uid, mode);
   }
 
-  const initials = (profile?.name ?? 'U')
-    .split(' ')
-    .map(w => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.bg }]}>
@@ -101,44 +95,37 @@ export default function ProfileScreen() {
         <Text style={[styles.title, { color: colors.ink }]}>{t.profileTitle}</Text>
         <Text style={[styles.subtitle, { color: colors.ink2 }]}>{t.profileSubtitle}</Text>
 
-        {/* Avatar + name */}
-        <View style={styles.avatarRow}>
-          <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[styles.avatarText, { color: colors.accent }]}>{initials}</Text>
-          </View>
-          <View style={styles.nameContainer}>
-            <Text style={[styles.nameFieldLabel, { color: colors.ink2 }]}>
-              {t.yourName.toUpperCase()}
-            </Text>
-            <View style={[styles.nameInputRow, {
-              borderColor: editingName ? colors.accent : colors.line,
-              borderWidth: editingName ? 1.5 : 1,
-              backgroundColor: colors.card,
-            }]}>
-              {editingName ? (
-                <TextInput
-                  style={[styles.nameInput, { color: colors.ink }]}
-                  value={name}
-                  onChangeText={setName}
-                  onBlur={handleNameSave}
-                  onSubmitEditing={handleNameSave}
-                  autoFocus
-                  returnKeyType="done"
-                  maxLength={50}
-                />
-              ) : (
-                <TouchableOpacity
-                  style={styles.nameDisplay}
-                  onPress={() => setEditingName(true)}
-                >
-                  <Text style={[styles.nameText, { color: colors.ink }]}>{profile?.name}</Text>
-                </TouchableOpacity>
-              )}
-              {!editingName && (
-                <Icon name="pencil" size={14} stroke={colors.ink2} sw={1.8} />
-              )}
-            </View>
-          </View>
+        {/* Name */}
+        <Text style={[styles.nameFieldLabel, { color: colors.ink2 }]}>
+          {t.yourName.toUpperCase()}
+        </Text>
+        <View style={[styles.nameInputRow, {
+          borderColor: editingName ? colors.accent : colors.line,
+          borderWidth: editingName ? 1.5 : 1,
+          backgroundColor: colors.card,
+        }]}>
+          {editingName ? (
+            <TextInput
+              style={[styles.nameInput, { color: colors.ink }]}
+              value={name}
+              onChangeText={setName}
+              onBlur={handleNameSave}
+              onSubmitEditing={handleNameSave}
+              autoFocus
+              returnKeyType="done"
+              maxLength={50}
+            />
+          ) : (
+            <TouchableOpacity
+              style={styles.nameDisplay}
+              onPress={() => setEditingName(true)}
+            >
+              <Text style={[styles.nameText, { color: colors.ink }]}>{profile?.name}</Text>
+            </TouchableOpacity>
+          )}
+          {!editingName && (
+            <Icon name="pencil" size={14} stroke={colors.ink2} sw={1.8} />
+          )}
         </View>
 
         {/* Language */}
@@ -261,13 +248,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 24 },
   title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8 },
   subtitle: { fontSize: 13, marginTop: 4, marginBottom: 28 },
-  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 8 },
-  avatar: {
-    width: 72, height: 72, borderRadius: 36,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarText: { fontSize: 26, fontWeight: '500', letterSpacing: -0.5 },
-  nameContainer: { flex: 1 },
   nameFieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, marginBottom: 6 },
   nameInputRow: {
     flexDirection: 'row', alignItems: 'center',

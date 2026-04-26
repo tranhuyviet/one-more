@@ -175,6 +175,7 @@ export default function HomeScreen() {
         <Text style={[styles.greeting, { color: colors.ink }]}>
           {t.greeting}, {profile?.name ?? ''} 👋
         </Text>
+        <Text style={[styles.homeSubtitle, { color: colors.ink2 }]}>{t.homeSubtitle}</Text>
 
         {/* Today */}
         <View style={styles.sectionRow}>
@@ -281,7 +282,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   statusBarCover: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   content: { paddingHorizontal: 24 },
-  greeting: { fontSize: 28, fontWeight: '500', letterSpacing: -0.4, marginBottom: 32 },
+  greeting: { fontSize: 28, fontWeight: '500', letterSpacing: -0.4, marginBottom: 6 },
+  homeSubtitle: { fontSize: 13, marginBottom: 28 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 },
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1 },
   sectionDate: { fontSize: 13 },
