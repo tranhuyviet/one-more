@@ -16,9 +16,9 @@ export async function getLogs(
 ): Promise<ExerciseLog[]> {
   const q = query(
     logsCol(userId),
-    where('loggedAt', '>=', startMs),
-    where('loggedAt', '<=', endMs),
-    orderBy('loggedAt', 'desc'),
+    where('createdAt', '>=', startMs),
+    where('createdAt', '<=', endMs),
+    orderBy('createdAt', 'desc'),
   );
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as ExerciseLog));
@@ -54,7 +54,7 @@ export function aggregateDailyStats(
   const byExercise: Record<string, { total: number; sets: number; best: number }> = {};
 
   for (const log of logs) {
-    const logDate = new Date(log.loggedAt).toISOString().split('T')[0];
+    const logDate = new Date(log.createdAt).toISOString().split('T')[0];
     if (logDate !== date) continue;
     if (!byExercise[log.exerciseId]) {
       byExercise[log.exerciseId] = { total: 0, sets: 0, best: 0 };

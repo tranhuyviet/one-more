@@ -72,7 +72,7 @@ export default function HistoryScreen() {
   // Build day entries
   const dayEntries: DayEntry[] = weekDates.map((d, i) => {
     const dateStr = getDateString(d);
-    const dayLogs = rangedLogs.filter(l => getDateString(new Date(l.loggedAt)) === dateStr);
+    const dayLogs = rangedLogs.filter(l => getDateString(new Date(l.createdAt)) === dateStr);
     const today = getDateString(new Date()) === dateStr;
 
     const exGroups = exercises
@@ -83,7 +83,7 @@ export default function HistoryScreen() {
           exercise: ex,
           total: exLogs.reduce((s, l) => s + l.value, 0),
           sets: exLogs.length,
-          logs: exLogs.sort((a, b) => a.loggedAt - b.loggedAt),
+          logs: exLogs.sort((a, b) => a.createdAt - b.createdAt),
         };
       })
       .filter(Boolean) as DayEntry['exercises'];
@@ -102,7 +102,7 @@ export default function HistoryScreen() {
   const periodLabel = `${weekStart.getDate().toString().padStart(2,'0')} – ${weekEnd.getDate().toString().padStart(2,'0')} · ${(weekEnd.getMonth()+1).toString().padStart(2,'0')} · ${weekEnd.getFullYear()}`;
 
   const totalReps = rangedLogs.reduce((s, l) => s + l.value, 0);
-  const activeDays = new Set(rangedLogs.map(l => getDateString(new Date(l.loggedAt)))).size;
+  const activeDays = new Set(rangedLogs.map(l => getDateString(new Date(l.createdAt)))).size;
   const avgPerDay = activeDays > 0 ? Math.round(totalReps / 7) : 0;
   const best = rangedLogs.length > 0
     ? Math.max(...dayEntries.map(d => d.exercises.reduce((s, e) => s + e.total, 0)))
@@ -348,7 +348,7 @@ export default function HistoryScreen() {
                   </View>
                 </View>
                 {ex.logs.map((log, i) => {
-                  const time = new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const time = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   return (
                     <SetRow
                       key={log.id}

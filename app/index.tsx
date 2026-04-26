@@ -96,7 +96,7 @@ export default function HomeScreen() {
     const byExDate: Record<string, number[]> = {};
     exercises.forEach(ex => { byExDate[ex.id] = Array(7).fill(0); });
     logs.forEach(log => {
-      const logDate = getDateString(new Date(log.loggedAt));
+      const logDate = getDateString(new Date(log.createdAt));
       const dayIdx = weekDates.findIndex(d => getDateString(d) === logDate);
       if (dayIdx >= 0 && byExDate[log.exerciseId]) byExDate[log.exerciseId][dayIdx] += log.value;
     });
@@ -192,7 +192,7 @@ export default function HomeScreen() {
                     <View style={[styles.cardDivider, { backgroundColor: `${ex.color}30` }]} />
                     <View style={styles.exCardDetail}>
                       {stats!.logs.map((log, j) => {
-                        const logTime = new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const logTime = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                         return (
                           <SetRow
                             key={log.id}

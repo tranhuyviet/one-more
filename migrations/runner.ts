@@ -1,10 +1,12 @@
 import { db } from './admin';
 import { migration as m001 } from './001_initial_schema';
+import { migration as m002 } from './002_rename_loggedAt_to_createdAt';
 import type { Migration } from './types';
 
 // Register all migrations here in order
 const ALL_MIGRATIONS: Migration[] = [
   m001,
+  m002,
 ];
 
 const COL = '_migrations';

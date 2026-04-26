@@ -52,7 +52,7 @@ export default function StatsScreen() {
   if (filteredLogs.length > 0) {
     const byWeek: Record<string, number> = {};
     filteredLogs.forEach(log => {
-      const d = new Date(log.loggedAt);
+      const d = new Date(log.createdAt);
       const monday = new Date(d);
       monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
       monday.setHours(0, 0, 0, 0);
@@ -76,11 +76,11 @@ export default function StatsScreen() {
   // Compare months
   const now = new Date();
   const thisMonthLogs = filteredLogs.filter(l => {
-    const d = new Date(l.loggedAt);
+    const d = new Date(l.createdAt);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
   const lastMonthLogs = filteredLogs.filter(l => {
-    const d = new Date(l.loggedAt);
+    const d = new Date(l.createdAt);
     const last = new Date(now); last.setMonth(now.getMonth() - 1);
     return d.getMonth() === last.getMonth() && d.getFullYear() === last.getFullYear();
   });
@@ -96,7 +96,7 @@ export default function StatsScreen() {
   const byDay: Record<string, number> = {};
   const bySet: number[] = [];
   rangedLogs.forEach(log => {
-    const key = getDateString(new Date(log.loggedAt));
+    const key = getDateString(new Date(log.createdAt));
     byDay[key] = (byDay[key] ?? 0) + log.value;
     bySet.push(log.value);
   });

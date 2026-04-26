@@ -38,7 +38,7 @@ export default function LogScreen() {
 
   const todayExLogs = todayLogs
     .filter(l => l.exerciseId === activeId)
-    .sort((a, b) => a.loggedAt - b.loggedAt);
+    .sort((a, b) => a.createdAt - b.createdAt);
   const todayTotal = todayExLogs.reduce((s, l) => s + l.value, 0);
   const quickValues = QUICK_PICK_VALUES[exercise.unit];
 
@@ -57,7 +57,7 @@ export default function LogScreen() {
         exerciseId: exercise!.id,
         value,
         note: note.trim(),
-        loggedAt: Date.now(),
+        createdAt: Date.now(),
       });
       setNote('');
       router.back();
@@ -188,7 +188,7 @@ export default function LogScreen() {
               {' '}{exercise.unit === 'reps' ? t.reps : t.seconds}
             </Text>
             {todayExLogs.map((log, i) => {
-              const time = new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const time = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               return (
                 <SetRow
                   key={log.id}

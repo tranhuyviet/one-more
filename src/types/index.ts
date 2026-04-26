@@ -28,7 +28,7 @@ export interface ExerciseLog {
   exerciseId: string;
   value: number;
   note: string;
-  loggedAt: number;
+  createdAt: number;
 }
 
 export interface DailyStats {
