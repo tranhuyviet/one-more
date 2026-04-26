@@ -111,7 +111,11 @@ const vi = {
   nextMilestone: 'Mốc tiếp theo',
   vsLastWeek: 'so với tuần trước',
   weeksAgo: 'tuần trước',
+  monthsAgo: 'tháng trước',
+  yearsAgo: 'năm trước',
+  thisYear: 'Năm nay',
   weekNow: 'Tuần này',
+  avgPerMonth: 'TB / tháng',
 
   // Records
   recordSet: '1 set nhiều nhất',
@@ -272,7 +276,11 @@ const en: typeof vi = {
   nextMilestone: 'Next milestone',
   vsLastWeek: 'vs last week',
   weeksAgo: 'weeks ago',
+  monthsAgo: 'months ago',
+  yearsAgo: 'years ago',
+  thisYear: 'This year',
   weekNow: 'This week',
+  avgPerMonth: 'Avg / month',
 
   recordSet: 'Best single set',
   recordDay: 'Best single day',

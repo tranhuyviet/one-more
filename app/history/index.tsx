@@ -13,21 +13,21 @@ import TabBar from '@/components/ui/TabBar';
 import DayDetail from '@/components/exercise/DayDetail';
 import { TAB_BAR_HEIGHT } from '@/constants/theme';
 import { ExerciseLog, Exercise } from '@/types';
-import { getWeekDates, getDateString, aggregateDailyStats } from '@/firebase/logs';
+import { getWeekDates, getDateString } from '@/firebase/logs';
 
-type TimeRange = 'day' | 'week' | 'month' | 'year';
+type TimeRange = 'week' | 'month' | 'year';
 
-interface DayEntry {
-  date: string;
-  dayLabel: string;
-  dateLabel: string;
+interface PeriodEntry {
+  key: string;
+  label: string;
+  subLabel: string;
   exercises: {
     exercise: Exercise;
     total: number;
     sets: number;
     logs: ExerciseLog[];
   }[];
-  isToday: boolean;
+  isCurrentPeriod: boolean;
 }
 
 export default function HistoryScreen() {
@@ -40,77 +40,143 @@ export default function HistoryScreen() {
 
   const [range, setRange] = useState<TimeRange>('week');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
 
-  const weekDays = [t.mon, t.tue, t.wed, t.thu, t.fri, t.sat, t.sun];
+  const weekDayLabels = [t.mon, t.tue, t.wed, t.thu, t.fri, t.sat, t.sun];
+  const dowLabels = [t.sun, t.mon, t.tue, t.wed, t.thu, t.fri, t.sat];
+  const monthLabels = lang === 'vi'
+    ? ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  useEffect(() => {
+    setOffset(0);
+    setSelectedKey(null);
+  }, [range]);
 
   useEffect(() => {
     if (!user) return;
     const { startMs, endMs } = getRangeMs();
     loadLogs(user.uid, startMs, endMs);
-  }, [user, range, weekOffset]);
+  }, [user, range, offset]);
 
-  function getRangeMs() {
+  function getRangeMs(): { startMs: number; endMs: number } {
     const now = new Date();
     if (range === 'week') {
-      const weekDates = getWeekDates(now);
-      const refDate = new Date(weekDates[0]);
-      refDate.setDate(refDate.getDate() + weekOffset * 7);
-      const weekDs = getWeekDates(refDate);
-      const start = weekDs[0]; start.setHours(0, 0, 0, 0);
-      const end = weekDs[6]; end.setHours(23, 59, 59, 999);
-      return { startMs: start.getTime(), endMs: end.getTime(), weekDates: weekDs };
+      const base = new Date(getWeekDates(now)[0]);
+      base.setDate(base.getDate() + offset * 7);
+      const weekDs = getWeekDates(base);
+      const start = new Date(weekDs[0]); start.setHours(0, 0, 0, 0);
+      const end = new Date(weekDs[6]); end.setHours(23, 59, 59, 999);
+      return { startMs: start.getTime(), endMs: end.getTime() };
     }
-    const start = new Date(now); start.setHours(0, 0, 0, 0);
-    const end = new Date(now); end.setHours(23, 59, 59, 999);
-    return { startMs: start.getTime(), endMs: end.getTime(), weekDates: getWeekDates(now) };
+    if (range === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { startMs: start.getTime(), endMs: end.getTime() };
+    }
+    const y = now.getFullYear() + offset;
+    const start = new Date(y, 0, 1); start.setHours(0, 0, 0, 0);
+    const end = new Date(y, 11, 31); end.setHours(23, 59, 59, 999);
+    return { startMs: start.getTime(), endMs: end.getTime() };
   }
-
-  const { weekDates } = getRangeMs();
 
   const filteredLogs = selectedFilter === 'all'
     ? rangedLogs
     : rangedLogs.filter(l => l.exerciseId === selectedFilter);
 
-  // Build day entries
-  const dayEntries: DayEntry[] = weekDates.map((d, i) => {
-    const dateStr = getDateString(d);
-    const dayLogs = filteredLogs.filter(l => getDateString(new Date(l.createdAt)) === dateStr);
-    const today = getDateString(new Date()) === dateStr;
+  function buildExGroups(logs: ExerciseLog[], withLogs: boolean): PeriodEntry['exercises'] {
+    return exercises.map(ex => {
+      const exLogs = logs.filter(l => l.exerciseId === ex.id);
+      if (exLogs.length === 0) return null;
+      return {
+        exercise: ex,
+        total: exLogs.reduce((s, l) => s + l.value, 0),
+        sets: exLogs.length,
+        logs: withLogs ? exLogs.sort((a, b) => a.createdAt - b.createdAt) : [],
+      };
+    }).filter(Boolean) as PeriodEntry['exercises'];
+  }
 
-    const exGroups = exercises
-      .map(ex => {
-        const exLogs = dayLogs.filter(l => l.exerciseId === ex.id);
-        if (exLogs.length === 0) return null;
-        return {
-          exercise: ex,
-          total: exLogs.reduce((s, l) => s + l.value, 0),
-          sets: exLogs.length,
-          logs: exLogs.sort((a, b) => a.createdAt - b.createdAt),
-        };
-      })
-      .filter(Boolean) as DayEntry['exercises'];
+  const now = new Date();
+  const nowDateStr = getDateString(now);
+  let entries: PeriodEntry[] = [];
+  let periodLabel = '';
+  let periodSub = '';
+  let periodCount = 7;
 
-    return {
-      date: dateStr,
-      dayLabel: weekDays[i],
-      dateLabel: `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`,
-      exercises: exGroups,
-      isToday: today,
-    };
-  }).reverse(); // most recent first
+  if (range === 'week') {
+    const base = new Date(getWeekDates(now)[0]);
+    base.setDate(base.getDate() + offset * 7);
+    const weekDs = getWeekDates(base);
+    entries = weekDs.map((d, i) => {
+      const dateStr = getDateString(d);
+      const dayLogs = filteredLogs.filter(l => getDateString(new Date(l.createdAt)) === dateStr);
+      return {
+        key: dateStr,
+        label: weekDayLabels[i],
+        subLabel: `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}`,
+        exercises: buildExGroups(dayLogs, true),
+        isCurrentPeriod: nowDateStr === dateStr,
+      };
+    }).reverse();
 
-  const weekStart = weekDates[0];
-  const weekEnd = weekDates[6];
-  const periodLabel = `${weekStart.getDate().toString().padStart(2,'0')} – ${weekEnd.getDate().toString().padStart(2,'0')} · ${(weekEnd.getMonth()+1).toString().padStart(2,'0')} · ${weekEnd.getFullYear()}`;
+    const wStart = weekDs[0], wEnd = weekDs[6];
+    periodLabel = `${wStart.getDate().toString().padStart(2,'0')} – ${wEnd.getDate().toString().padStart(2,'0')} · ${(wEnd.getMonth()+1).toString().padStart(2,'0')} · ${wEnd.getFullYear()}`;
+    periodSub = offset === 0 ? t.thisWeek : `${Math.abs(offset)} ${t.weeksAgo}`;
+    periodCount = 7;
+
+  } else if (range === 'month') {
+    const refMonth = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const daysInMonth = new Date(refMonth.getFullYear(), refMonth.getMonth() + 1, 0).getDate();
+    entries = Array.from({ length: daysInMonth }, (_, i) => {
+      const d = new Date(refMonth.getFullYear(), refMonth.getMonth(), i + 1);
+      const dateStr = getDateString(d);
+      const dayLogs = filteredLogs.filter(l => getDateString(new Date(l.createdAt)) === dateStr);
+      return {
+        key: dateStr,
+        label: dowLabels[d.getDay()],
+        subLabel: `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}`,
+        exercises: buildExGroups(dayLogs, true),
+        isCurrentPeriod: nowDateStr === dateStr,
+      };
+    }).reverse();
+
+    periodLabel = lang === 'vi'
+      ? `Tháng ${refMonth.getMonth() + 1} · ${refMonth.getFullYear()}`
+      : `${monthLabels[refMonth.getMonth()]} ${refMonth.getFullYear()}`;
+    periodSub = offset === 0 ? t.thisMonth : `${Math.abs(offset)} ${t.monthsAgo}`;
+    periodCount = daysInMonth;
+
+  } else {
+    const refYear = now.getFullYear() + offset;
+    entries = Array.from({ length: 12 }, (_, i) => {
+      const monthLogs = filteredLogs.filter(l => {
+        const d = new Date(l.createdAt);
+        return d.getFullYear() === refYear && d.getMonth() === i;
+      });
+      return {
+        key: `${refYear}-${(i+1).toString().padStart(2,'0')}`,
+        label: monthLabels[i],
+        subLabel: (i+1).toString().padStart(2,'0'),
+        exercises: buildExGroups(monthLogs, false),
+        isCurrentPeriod: now.getFullYear() === refYear && now.getMonth() === i,
+      };
+    }).reverse();
+
+    periodLabel = `${refYear}`;
+    periodSub = offset === 0 ? t.thisYear : `${Math.abs(offset)} ${t.yearsAgo}`;
+    periodCount = 12;
+  }
 
   const totalReps = filteredLogs.reduce((s, l) => s + l.value, 0);
-  const activeDays = new Set(filteredLogs.map(l => getDateString(new Date(l.createdAt)))).size;
-  const avgPerDay = activeDays > 0 ? Math.round(totalReps / 7) : 0;
-  const best = filteredLogs.length > 0
-    ? Math.max(...dayEntries.map(d => d.exercises.reduce((s, e) => s + e.total, 0)))
-    : 0;
+  const entryTotals = entries.map(e => e.exercises.reduce((s, ex) => s + ex.total, 0));
+  const best = filteredLogs.length > 0 ? Math.max(...entryTotals) : 0;
+  const maxInPeriod = Math.max(...entryTotals, 1);
+  const avg = totalReps > 0 ? Math.round(totalReps / periodCount) : 0;
+  const avgLabel = range === 'year' ? t.avgPerMonth : t.avgPerDay;
 
   const exerciseFilters = [
     { id: 'all', icon: '✦', name: t.allExercises },
@@ -169,8 +235,8 @@ export default function HistoryScreen() {
 
         {/* Time range */}
         <View style={[styles.rangeControl, { backgroundColor: colors.card }]}>
-          {(['day', 'week', 'month', 'year'] as TimeRange[]).map(r => {
-            const labels = { day: t.day, week: t.week, month: t.month, year: t.year };
+          {(['week', 'month', 'year'] as TimeRange[]).map(r => {
+            const labels: Record<TimeRange, string> = { week: t.week, month: t.month, year: t.year };
             const active = r === range;
             return (
               <TouchableOpacity
@@ -193,22 +259,23 @@ export default function HistoryScreen() {
         <View style={[styles.periodNav, { borderBottomColor: colors.line }]}>
           <TouchableOpacity
             style={[styles.navBtn, { borderColor: colors.line }]}
-            onPress={() => setWeekOffset(w => w - 1)}
+            onPress={() => setOffset(o => o - 1)}
           >
             <Icon name="chevLeft" size={12} stroke={colors.ink2} sw={2} />
           </TouchableOpacity>
           <View style={styles.periodCenter}>
             <Text style={[styles.periodLabel, { color: colors.ink }]}>{periodLabel}</Text>
-            <Text style={[styles.periodSub, { color: colors.ink2 }]}>
-              {weekOffset === 0 ? (
-                <Text style={{ color: colors.accent, fontWeight: '600' }}>{t.thisWeek}</Text>
-              ) : `${Math.abs(weekOffset)} ${t.weeksAgo}`}
+            <Text style={[styles.periodSub, {
+              color: offset === 0 ? colors.accent : colors.ink2,
+              fontWeight: offset === 0 ? '600' : '400',
+            }]}>
+              {periodSub}
             </Text>
           </View>
           <TouchableOpacity
-            style={[styles.navBtn, { borderColor: colors.line, opacity: weekOffset >= 0 ? 0.35 : 1 }]}
-            onPress={() => setWeekOffset(w => Math.min(0, w + 1))}
-            disabled={weekOffset >= 0}
+            style={[styles.navBtn, { borderColor: colors.line, opacity: offset >= 0 ? 0.35 : 1 }]}
+            onPress={() => setOffset(o => Math.min(0, o + 1))}
+            disabled={offset >= 0}
           >
             <Icon name="chev" size={12} stroke={colors.ink2} sw={2} />
           </TouchableOpacity>
@@ -218,11 +285,11 @@ export default function HistoryScreen() {
         <View style={styles.summaryRow}>
           <View style={styles.summaryCell}>
             <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.total.toUpperCase()}</Text>
-            <Text style={[styles.summaryValue, { color: colors.ink }]}>{totalReps}</Text>
+            <Text style={[styles.summaryValue, { color: colors.ink }]}>{totalReps || '—'}</Text>
           </View>
           <View style={styles.summaryCell}>
-            <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.avgPerDay.toUpperCase()}</Text>
-            <Text style={[styles.summaryValue, { color: colors.ink }]}>{avgPerDay}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{avgLabel.toUpperCase()}</Text>
+            <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
           </View>
           <View style={styles.summaryCell}>
             <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.best.toUpperCase()}</Text>
@@ -230,17 +297,18 @@ export default function HistoryScreen() {
           </View>
         </View>
 
-        {/* Day list */}
+        {/* Entry list */}
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />
         ) : (
-          dayEntries.map((entry, i) => {
+          entries.map((entry, i) => {
             const totalAll = entry.exercises.reduce((s, e) => s + e.total, 0);
             const isEmpty = entry.exercises.length === 0;
-            const isSelected = selectedDay === entry.date;
+            const isSelected = selectedKey === entry.key;
+            const canExpand = range !== 'year' && !isEmpty;
 
             return (
-              <View key={entry.date}>
+              <View key={entry.key}>
                 <TouchableOpacity
                   style={[
                     styles.dayRow,
@@ -249,26 +317,26 @@ export default function HistoryScreen() {
                       marginHorizontal: -12,
                       paddingHorizontal: 12,
                       borderRadius: isSelected ? 12 : 0,
-                      borderBottomColor: !isSelected && i < dayEntries.length - 1 ? colors.line : 'transparent',
-                      borderBottomWidth: !isSelected && i < dayEntries.length - 1 ? StyleSheet.hairlineWidth : 0,
+                      borderBottomColor: !isSelected && i < entries.length - 1 ? colors.line : 'transparent',
+                      borderBottomWidth: !isSelected && i < entries.length - 1 ? StyleSheet.hairlineWidth : 0,
                       opacity: isEmpty ? 0.4 : 1,
                     },
                   ]}
-                  onPress={() => setSelectedDay(isSelected ? null : entry.date)}
-                  activeOpacity={0.7}
+                  onPress={() => canExpand && setSelectedKey(isSelected ? null : entry.key)}
+                  activeOpacity={canExpand ? 0.7 : 1}
                 >
                   <View style={styles.dayMeta}>
                     <Text style={[styles.dayName, {
                       color: isSelected ? colors.accent : colors.ink2,
                       fontWeight: isSelected ? '700' : '400',
                     }]}>
-                      {entry.dayLabel}
+                      {entry.label}
                     </Text>
                     <Text style={[styles.dayDate, {
                       color: isSelected ? colors.accentInk : colors.ink,
                       fontWeight: isSelected ? '600' : '400',
                     }]}>
-                      {entry.dateLabel}
+                      {entry.subLabel}
                     </Text>
                   </View>
 
@@ -297,8 +365,8 @@ export default function HistoryScreen() {
                     </View>
                     <View style={[styles.progressBar, { backgroundColor: isSelected ? colors.accentLine : colors.line }]}>
                       <View style={[styles.progressFill, {
-                        width: `${Math.min((totalAll / 250) * 100, 100)}%`,
-                        backgroundColor: entry.isToday || isSelected ? colors.accent : colors.ink,
+                        width: `${Math.min((totalAll / maxInPeriod) * 100, 100)}%`,
+                        backgroundColor: entry.isCurrentPeriod || isSelected ? colors.accent : colors.ink,
                       }]} />
                     </View>
                   </View>
@@ -309,13 +377,15 @@ export default function HistoryScreen() {
                     }]}>
                       {totalAll || '—'}
                     </Text>
-                    <View style={{ transform: [{ rotate: isSelected ? '90deg' : '0deg' }] }}>
-                      <Icon name="chev" size={14} stroke={isSelected ? colors.accent : (isEmpty ? colors.line : colors.ink2)} sw={2} />
-                    </View>
+                    {canExpand && (
+                      <View style={{ transform: [{ rotate: isSelected ? '90deg' : '0deg' }] }}>
+                        <Icon name="chev" size={14} stroke={isSelected ? colors.accent : colors.ink2} sw={2} />
+                      </View>
+                    )}
                   </View>
                 </TouchableOpacity>
 
-                {isSelected && entry.exercises.length > 0 && (
+                {isSelected && canExpand && (
                   <View style={styles.inlineDetail}>
                     <DayDetail exercises={entry.exercises} />
                   </View>
@@ -367,9 +437,7 @@ const styles = StyleSheet.create({
   periodCenter: { alignItems: 'center' },
   periodLabel: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
   periodSub: { fontSize: 11, marginTop: 2, letterSpacing: 0.3 },
-  summaryRow: {
-    flexDirection: 'row', gap: 16, marginBottom: 24,
-  },
+  summaryRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
   summaryCell: { flex: 1 },
   summaryLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6 },
   summaryValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8, marginTop: 4 },
