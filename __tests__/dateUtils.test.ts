@@ -152,4 +152,18 @@ describe('getPeriodCount', () => {
     expect(getPeriodCount('year', 0, fixedNow)).toBe(365); // 2026
     expect(getPeriodCount('year', -2, fixedNow)).toBe(366); // 2024 leap
   });
+
+  it('uses current date when now not provided', () => {
+    // Cover default parameter branch — result must be 7 for week regardless
+    expect(getPeriodCount('week', 0)).toBe(7);
+  });
+});
+
+describe('getCurrentPeriodBounds default parameter', () => {
+  it('uses current date when now not provided', () => {
+    const { startMs, endMs } = getCurrentPeriodBounds('week', 0);
+    expect(endMs).toBeGreaterThan(startMs);
+    // start should be a Monday at 00:00:00
+    expect(new Date(startMs).getDay()).toBe(1);
+  });
 });

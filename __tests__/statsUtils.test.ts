@@ -110,6 +110,14 @@ describe('computeDiffPercent', () => {
   });
 });
 
+describe('computeBestInPeriod default parameter', () => {
+  it('uses current date when now not provided', () => {
+    const logs = [makeLog({ createdAt: Date.now(), value: 50 })];
+    // Just verify it runs without error and returns a non-negative number
+    expect(computeBestInPeriod(logs, 'week', 0)).toBeGreaterThanOrEqual(0);
+  });
+});
+
 describe('getActiveDays', () => {
   it('returns 0 for empty logs', () => {
     expect(getActiveDays([])).toBe(0);

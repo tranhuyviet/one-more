@@ -1,5 +1,36 @@
-import { getDefaultQuickPicks, sortQuickPicks, validateQuickPicks } from '../src/utils/unitUtils';
+import { getUnitShortLabel, getDefaultQuickPicks, sortQuickPicks, validateQuickPicks } from '../src/utils/unitUtils';
 import { QUICK_PICK_VALUES } from '../src/constants/defaultExercises';
+
+const mockT = { reps: 'lần', seconds: 'giây', minutes: 'phút', km: 'km', meters: 'm' };
+
+describe('getUnitShortLabel', () => {
+  it('returns "lần" for reps', () => {
+    expect(getUnitShortLabel('reps', mockT)).toBe('lần');
+  });
+
+  it('returns "giây" for duration (seconds)', () => {
+    expect(getUnitShortLabel('duration', mockT)).toBe('giây');
+  });
+
+  it('returns "phút" for minutes', () => {
+    expect(getUnitShortLabel('minutes', mockT)).toBe('phút');
+  });
+
+  it('returns "km" for km', () => {
+    expect(getUnitShortLabel('km', mockT)).toBe('km');
+  });
+
+  it('returns "m" for distance (meters)', () => {
+    expect(getUnitShortLabel('distance', mockT)).toBe('m');
+  });
+
+  it('works with English translations', () => {
+    const enT = { reps: 'reps', seconds: 'sec', minutes: 'min', km: 'km', meters: 'm' };
+    expect(getUnitShortLabel('reps', enT)).toBe('reps');
+    expect(getUnitShortLabel('duration', enT)).toBe('sec');
+    expect(getUnitShortLabel('minutes', enT)).toBe('min');
+  });
+});
 
 describe('getDefaultQuickPicks', () => {
   it('returns 6 values for reps', () => {
