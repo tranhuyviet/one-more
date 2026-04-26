@@ -14,9 +14,6 @@
     "ios:release": "npx expo run:ios --device --configuration Release",
     "web": "expo start --web",
     "build:ios": "eas build --profile preview --platform ios",
-    "build:ios:prod": "eas build --profile production --platform ios",
-    "testflight": "eas build --profile production --platform ios && eas submit --profile production --platform ios",
-    "upload:testflight": "eas submit --profile production --platform ios",
     "migrate": "tsx migrations/runner.ts",
     "migrate:status": "tsx migrations/runner.ts status",
     "migrate:up": "tsx migrations/runner.ts up",
@@ -25,8 +22,8 @@
     "test:coverage": "jest --coverage",
     "check": "npx tsc --noEmit && pnpm test && npx expo install --check && npx expo-doctor",
     "fix": "npx expo install && npx expo-doctor",
-    "release:ios": "pnpm check && eas build --profile production --platform ios",
-    "release:testflight": "pnpm check && eas build --profile production --platform ios && eas submit --profile production --platform ios"
+    "build:ios:prod": "eas build --profile production --platform ios",
+    "upload:testflight": "eas submit --profile production --platform ios"
   },
   "jest": {
     "testEnvironment": "node",
