@@ -135,7 +135,7 @@ const vi = {
 
   // History screen
   historyTitle: 'Lịch sử',
-  historySubtitle: 'Theo dõi tiến bộ từng môn',
+  historySubtitle: 'Nhìn lại hành trình rèn luyện',
   noWorkout: '— không tập —',
   weekLabel: 'Tuần',
 
@@ -151,6 +151,7 @@ const vi = {
 
   // Profile screen
   profileTitle: 'Cá nhân',
+  profileSubtitle: 'Thông tin và cài đặt ứng dụng',
   yourName: 'Tên của bạn',
   language: 'Ngôn ngữ',
   appearance: 'Giao diện',
@@ -308,7 +309,7 @@ const en: typeof vi = {
   recordStreak: 'Longest streak',
 
   historyTitle: 'History',
-  historySubtitle: 'Track progress per exercise',
+  historySubtitle: 'Review your training journey',
   noWorkout: '— rest day —',
   weekLabel: 'Week',
 
@@ -322,6 +323,7 @@ const en: typeof vi = {
   newRecord: 'New record',
 
   profileTitle: 'Profile',
+  profileSubtitle: 'Account details and preferences',
   yourName: 'Your name',
   language: 'Language',
   appearance: 'Appearance',

@@ -99,6 +99,7 @@ export default function ProfileScreen() {
         ]}
       >
         <Text style={[styles.title, { color: colors.ink }]}>{t.profileTitle}</Text>
+        <Text style={[styles.subtitle, { color: colors.ink2 }]}>{t.profileSubtitle}</Text>
 
         {/* Avatar + name */}
         <View style={styles.avatarRow}>
@@ -257,7 +258,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   statusBarCover: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   content: { paddingHorizontal: 24 },
-  title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8, marginBottom: 28 },
+  title: { fontSize: 32, fontWeight: '400', letterSpacing: -0.8 },
+  subtitle: { fontSize: 13, marginTop: 4, marginBottom: 28 },
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 8 },
   avatar: {
     width: 72, height: 72, borderRadius: 36,
