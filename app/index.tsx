@@ -68,7 +68,7 @@ export default function HomeScreen() {
     if (!profile) { router.replace('/welcome'); return; }
     loadTodayLogs(user.uid);
     loadWeekData();
-  }, [user, profile, authLoading, profileLoading]);
+  }, [user, profile, authLoading, profileLoading, exercises]);
 
   useEffect(() => {
     if (Object.keys(weekData).length === 0) return;
@@ -98,7 +98,7 @@ export default function HomeScreen() {
   }, [todayLogs]);
 
   async function loadWeekData() {
-    if (!user) return;
+    if (!user || exercises.length === 0) return;
     const weekDates = getWeekDates(new Date());
     const start = weekDates[0].getTime();
     const end = weekDates[6];
