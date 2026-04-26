@@ -89,6 +89,7 @@ const vi = {
   unitKm: 'Km',
   unitKmDesc: 'Chạy bộ, đạp xe ngoài trời...',
   quickPickSetup: 'Thiết lập Chọn nhanh',
+  sortAsc: 'Sắp xếp tăng dần',
 
   // Muscle groups
   mgChest: 'Ngực / Vai',
@@ -265,6 +266,7 @@ const en: typeof vi = {
   unitKm: 'Km',
   unitKmDesc: 'Running, outdoor cycling...',
   quickPickSetup: 'Quick pick setup',
+  sortAsc: 'Sort ascending',
 
   mgChest: 'Chest / Shoulders',
   mgBack: 'Back',

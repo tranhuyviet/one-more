@@ -344,7 +344,17 @@ export default function AddExerciseScreen() {
         </View>
 
         {/* Quick picks */}
-        <SectionLabel label={`${t.quickPickSetup} (${unitShortLabel.toLowerCase()})`} />
+        <View style={styles.quickPickHeader}>
+          <SectionLabel label={`${t.quickPickSetup} (${unitShortLabel.toLowerCase()})`} />
+          <TouchableOpacity
+            style={[styles.sortBtn, { borderColor: colors.line, backgroundColor: colors.card }]}
+            onPress={() => setQuickPicks(prev =>
+              [...prev].sort((a, b) => parseInt(a || '0') - parseInt(b || '0')).map(String)
+            )}
+          >
+            <Text style={[styles.sortBtnText, { color: colors.ink2 }]}>↑ {t.sortAsc}</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.quickPickGrid}>
           {quickPicks.map((v, i) => (
             <TextInput
@@ -440,7 +450,10 @@ const styles = StyleSheet.create({
   subBtn: { flex: 1, padding: 12, borderRadius: 10, borderWidth: 1 },
   subBtnLabel: { fontSize: 14, fontWeight: '600' },
   subBtnDesc: { fontSize: 11, marginTop: 3, opacity: 0.8 },
-  quickPickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
+  quickPickHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 10 },
+  sortBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
+  sortBtnText: { fontSize: 12, fontWeight: '500' },
+  quickPickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 28 },
   quickPickInput: {
     width: '30%', flexGrow: 1,
     paddingVertical: 14, borderRadius: 12,
