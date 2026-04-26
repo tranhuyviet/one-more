@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 interface WeekGridRow {
   icon: string;
   name: string;
+  color: string;
   week: number[]; // 7 values Mon-Sun
 }
 
@@ -51,10 +52,9 @@ export default function WeekGrid({ rows, todayIndex = 6 }: WeekGridProps) {
           >
             {/* Exercise label */}
             <View style={styles.labelCol}>
-              <Text style={styles.labelIcon}>{row.icon}</Text>
-              <Text style={[styles.labelName, { color: colors.ink2 }]} numberOfLines={1}>
-                {row.name}
-              </Text>
+              <View style={[styles.iconBadge, { backgroundColor: `${row.color}20` }]}>
+                <Text style={styles.labelIcon}>{row.icon}</Text>
+              </View>
             </View>
 
             {/* Bars */}
@@ -99,19 +99,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   labelCol: {
-    width: 78,
-    flexDirection: 'row',
+    width: 36,
     alignItems: 'center',
-    gap: 4,
-    paddingRight: 4,
+  },
+  iconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   labelIcon: {
-    fontSize: 14,
-  },
-  labelName: {
-    fontSize: 10,
-    fontWeight: '500',
-    flexShrink: 1,
+    fontSize: 15,
   },
   dayCell: {
     flex: 1,

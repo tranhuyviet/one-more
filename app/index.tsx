@@ -120,7 +120,7 @@ export default function HomeScreen() {
   const lang = profile?.language ?? 'vi';
   const weekGridRows = exercises
     .filter(ex => weekData[ex.id])
-    .map(ex => ({ icon: ex.icon, name: ex.name, week: weekData[ex.id] ?? Array(7).fill(0) }));
+    .map(ex => ({ icon: ex.icon, name: ex.name, color: ex.color, week: weekData[ex.id] ?? Array(7).fill(0) }));
 
   function handleExPress(exId: string) {
     const stats = todayByEx[exId];
