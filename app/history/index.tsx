@@ -296,18 +296,24 @@ export default function HistoryScreen() {
           <View style={styles.summaryRow}>
             <View style={styles.summaryCell}>
               <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.total.toUpperCase()}</Text>
-              <Text style={[styles.summaryValue, { color: colors.ink }]}>{totalReps || '—'}</Text>
-              {totalReps > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
+              <View style={styles.summaryValueRow}>
+                <Text style={[styles.summaryValue, { color: colors.ink }]}>{totalReps || '—'}</Text>
+                {totalReps > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
+              </View>
             </View>
             <View style={styles.summaryCell}>
               <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.avgPerDay.toUpperCase()}</Text>
-              <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
-              {avg > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
+              <View style={styles.summaryValueRow}>
+                <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
+                {avg > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
+              </View>
             </View>
-            <View style={styles.summaryCell}>
+            <View style={[styles.summaryCell, { paddingRight: 0 }]}>
               <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.best.toUpperCase()}</Text>
-              <Text style={[styles.summaryValue, { color: colors.accent }]}>{best || '—'}</Text>
-              {best > 0 && <Text style={[styles.summaryUnit, { color: colors.accent }]}>{unitShortLabel}</Text>}
+              <View style={styles.summaryValueRow}>
+                <Text style={[styles.summaryValue, { color: colors.accent }]}>{best || '—'}</Text>
+                {best > 0 && <Text style={[styles.summaryUnit, { color: colors.accent }]}>{unitShortLabel}</Text>}
+              </View>
             </View>
           </View>
         )}
@@ -461,11 +467,12 @@ const styles = StyleSheet.create({
   periodCenter: { alignItems: 'center' },
   periodLabel: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
   periodSub: { fontSize: 11, marginTop: 2, letterSpacing: 0.3 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
+  summaryRow: { flexDirection: 'row', marginBottom: 24 },
   summaryCell: { flex: 1, paddingRight: 8 },
   summaryLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6 },
-  summaryValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8, marginTop: 4 },
-  summaryUnit: { fontSize: 11, marginTop: 2 },
+  summaryValueRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: 4 },
+  summaryValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8 },
+  summaryUnit: { fontSize: 13, fontWeight: '400', marginBottom: 3 },
   dayRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 18, marginBottom: 2,
   },
