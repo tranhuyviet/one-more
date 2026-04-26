@@ -166,9 +166,10 @@ export default function HistoryScreen() {
       };
     }).reverse();
 
+    const isLeap = (refYear % 4 === 0 && refYear % 100 !== 0) || refYear % 400 === 0;
     periodLabel = `${refYear}`;
     periodSub = offset === 0 ? t.thisYear : `${Math.abs(offset)} ${t.yearsAgo}`;
-    periodCount = 12;
+    periodCount = isLeap ? 366 : 365;
   }
 
   const totalReps = filteredLogs.reduce((s, l) => s + l.value, 0);
@@ -176,7 +177,6 @@ export default function HistoryScreen() {
   const best = filteredLogs.length > 0 ? Math.max(...entryTotals) : 0;
   const maxInPeriod = Math.max(...entryTotals, 1);
   const avg = totalReps > 0 ? Math.round(totalReps / periodCount) : 0;
-  const avgLabel = range === 'year' ? t.avgPerMonth : t.avgPerDay;
 
   const isFilteredByExercise = selectedFilter !== 'all';
   const filteredExercise = isFilteredByExercise ? exercises.find(e => e.id === selectedFilter) : null;
@@ -255,8 +255,8 @@ export default function HistoryScreen() {
                 onPress={() => setRange(r)}
               >
                 <Text style={[styles.rangeBtnText, {
-                  color: active ? colors.ink : colors.ink2,
-                  fontWeight: active ? '600' : '500',
+                  color: active ? colors.accent : colors.ink2,
+                  fontWeight: active ? '700' : '400',
                 }]}>
                   {labels[r]}
                 </Text>
@@ -300,7 +300,7 @@ export default function HistoryScreen() {
               {totalReps > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
             </View>
             <View style={styles.summaryCell}>
-              <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{avgLabel.toUpperCase()}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.avgPerDay.toUpperCase()}</Text>
               <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
               {avg > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
             </View>
@@ -361,12 +361,12 @@ export default function HistoryScreen() {
                         <View
                           key={j}
                           style={[styles.exBadge, {
-                            backgroundColor: isSelected ? colors.accentLine : colors.card,
+                            backgroundColor: isSelected ? colors.accentLine : `${e.exercise.color}22`,
                           }]}
                         >
                           <Text style={styles.exBadgeIcon}>{e.exercise.icon}</Text>
                           <Text style={[styles.exBadgeVal, {
-                            color: isSelected ? colors.accentInk : colors.ink2,
+                            color: isSelected ? colors.accentInk : e.exercise.color,
                           }]}>
                             {e.total}
                           </Text>
@@ -461,8 +461,8 @@ const styles = StyleSheet.create({
   periodCenter: { alignItems: 'center' },
   periodLabel: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
   periodSub: { fontSize: 11, marginTop: 2, letterSpacing: 0.3 },
-  summaryRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
-  summaryCell: { flex: 1 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
+  summaryCell: { flex: 1, paddingRight: 8 },
   summaryLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6 },
   summaryValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8, marginTop: 4 },
   summaryUnit: { fontSize: 11, marginTop: 2 },
