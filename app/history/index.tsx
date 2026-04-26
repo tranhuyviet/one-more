@@ -178,8 +178,18 @@ export default function HistoryScreen() {
   const avg = totalReps > 0 ? Math.round(totalReps / periodCount) : 0;
   const avgLabel = range === 'year' ? t.avgPerMonth : t.avgPerDay;
 
+  const isFilteredByExercise = selectedFilter !== 'all';
+  const filteredExercise = isFilteredByExercise ? exercises.find(e => e.id === selectedFilter) : null;
+  const unitShortLabel = filteredExercise
+    ? (filteredExercise.unit === 'reps' ? t.reps
+      : filteredExercise.unit === 'duration' ? t.seconds
+      : filteredExercise.unit === 'minutes' ? t.minutes
+      : filteredExercise.unit === 'km' ? t.km
+      : t.meters)
+    : '';
+
   const exerciseFilters = [
-    { id: 'all', icon: '✦', name: t.allExercises },
+    { id: 'all', icon: '★', name: t.allExercises },
     ...exercises.map(ex => ({ id: ex.id, icon: ex.icon, name: ex.name })),
   ];
 
@@ -221,7 +231,7 @@ export default function HistoryScreen() {
                 ]}
                 onPress={() => setSelectedFilter(ex.id)}
               >
-                <Text style={styles.filterIcon}>{ex.icon}</Text>
+                <Text style={[styles.filterIcon, { color: active ? colors.accentInk : colors.ink }]}>{ex.icon}</Text>
                 <Text style={[styles.filterName, {
                   color: active ? colors.accentInk : colors.ink,
                   fontWeight: active ? '600' : '500',
@@ -281,21 +291,26 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Period summary */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCell}>
-            <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.total.toUpperCase()}</Text>
-            <Text style={[styles.summaryValue, { color: colors.ink }]}>{totalReps || '—'}</Text>
+        {/* Period summary — only when filtered by a specific exercise */}
+        {isFilteredByExercise && (
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryCell}>
+              <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.total.toUpperCase()}</Text>
+              <Text style={[styles.summaryValue, { color: colors.ink }]}>{totalReps || '—'}</Text>
+              {totalReps > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
+            </View>
+            <View style={styles.summaryCell}>
+              <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{avgLabel.toUpperCase()}</Text>
+              <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
+              {avg > 0 && <Text style={[styles.summaryUnit, { color: colors.ink2 }]}>{unitShortLabel}</Text>}
+            </View>
+            <View style={styles.summaryCell}>
+              <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.best.toUpperCase()}</Text>
+              <Text style={[styles.summaryValue, { color: colors.accent }]}>{best || '—'}</Text>
+              {best > 0 && <Text style={[styles.summaryUnit, { color: colors.accent }]}>{unitShortLabel}</Text>}
+            </View>
           </View>
-          <View style={styles.summaryCell}>
-            <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{avgLabel.toUpperCase()}</Text>
-            <Text style={[styles.summaryValue, { color: colors.ink }]}>{avg || '—'}</Text>
-          </View>
-          <View style={styles.summaryCell}>
-            <Text style={[styles.summaryLabel, { color: colors.ink2 }]}>{t.best.toUpperCase()}</Text>
-            <Text style={[styles.summaryValue, { color: colors.accent }]}>{best || '—'}</Text>
-          </View>
-        </View>
+        )}
 
         {/* Entry list */}
         {loading ? (
@@ -342,7 +357,7 @@ export default function HistoryScreen() {
 
                   <View style={styles.dayContent}>
                     <View style={styles.exBadges}>
-                      {entry.exercises.slice(0, 4).map((e, j) => (
+                      {entry.exercises.map((e, j) => (
                         <View
                           key={j}
                           style={[styles.exBadge, {
@@ -372,11 +387,20 @@ export default function HistoryScreen() {
                   </View>
 
                   <View style={styles.dayRight}>
-                    <Text style={[styles.dayTotal, {
-                      color: isSelected ? colors.accentInk : colors.ink,
-                    }]}>
-                      {totalAll || '—'}
-                    </Text>
+                    {isFilteredByExercise && (
+                      <View style={styles.dayTotalWrap}>
+                        <Text style={[styles.dayTotal, {
+                          color: isSelected ? colors.accentInk : colors.ink,
+                        }]}>
+                          {totalAll || '—'}
+                        </Text>
+                        {totalAll > 0 && (
+                          <Text style={[styles.dayTotalUnit, { color: isSelected ? colors.accentInk : colors.ink2 }]}>
+                            {unitShortLabel}
+                          </Text>
+                        )}
+                      </View>
+                    )}
                     {canExpand && (
                       <View style={{ transform: [{ rotate: isSelected ? '90deg' : '0deg' }] }}>
                         <Icon name="chev" size={14} stroke={isSelected ? colors.accent : colors.ink2} sw={2} />
@@ -441,6 +465,7 @@ const styles = StyleSheet.create({
   summaryCell: { flex: 1 },
   summaryLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6 },
   summaryValue: { fontSize: 28, fontWeight: '300', letterSpacing: -0.8, marginTop: 4 },
+  summaryUnit: { fontSize: 11, marginTop: 2 },
   dayRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 18, marginBottom: 2,
   },
@@ -458,7 +483,9 @@ const styles = StyleSheet.create({
   emptyLabel: { fontSize: 12, fontStyle: 'italic' },
   progressBar: { height: 2, borderRadius: 1, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 1 },
-  dayRight: { width: 64, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 4 },
+  dayRight: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 4, paddingLeft: 8 },
+  dayTotalWrap: { alignItems: 'flex-end' },
   dayTotal: { fontSize: 22, fontWeight: '300', letterSpacing: -0.5 },
+  dayTotalUnit: { fontSize: 11, marginTop: 1 },
   inlineDetail: { paddingBottom: 12 },
 });
