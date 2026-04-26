@@ -69,10 +69,14 @@ export default function HistoryScreen() {
 
   const { weekDates } = getRangeMs();
 
+  const filteredLogs = selectedFilter === 'all'
+    ? rangedLogs
+    : rangedLogs.filter(l => l.exerciseId === selectedFilter);
+
   // Build day entries
   const dayEntries: DayEntry[] = weekDates.map((d, i) => {
     const dateStr = getDateString(d);
-    const dayLogs = rangedLogs.filter(l => getDateString(new Date(l.createdAt)) === dateStr);
+    const dayLogs = filteredLogs.filter(l => getDateString(new Date(l.createdAt)) === dateStr);
     const today = getDateString(new Date()) === dateStr;
 
     const exGroups = exercises
@@ -101,10 +105,10 @@ export default function HistoryScreen() {
   const weekEnd = weekDates[6];
   const periodLabel = `${weekStart.getDate().toString().padStart(2,'0')} – ${weekEnd.getDate().toString().padStart(2,'0')} · ${(weekEnd.getMonth()+1).toString().padStart(2,'0')} · ${weekEnd.getFullYear()}`;
 
-  const totalReps = rangedLogs.reduce((s, l) => s + l.value, 0);
-  const activeDays = new Set(rangedLogs.map(l => getDateString(new Date(l.createdAt)))).size;
+  const totalReps = filteredLogs.reduce((s, l) => s + l.value, 0);
+  const activeDays = new Set(filteredLogs.map(l => getDateString(new Date(l.createdAt)))).size;
   const avgPerDay = activeDays > 0 ? Math.round(totalReps / 7) : 0;
-  const best = rangedLogs.length > 0
+  const best = filteredLogs.length > 0
     ? Math.max(...dayEntries.map(d => d.exercises.reduce((s, e) => s + e.total, 0)))
     : 0;
 
