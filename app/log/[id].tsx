@@ -40,7 +40,9 @@ export default function LogScreen() {
     .filter(l => l.exerciseId === activeId)
     .sort((a, b) => a.createdAt - b.createdAt);
   const todayTotal = todayExLogs.reduce((s, l) => s + l.value, 0);
-  const quickValues = QUICK_PICK_VALUES[exercise.unit];
+  const quickValues = (exercise.quickPicks && exercise.quickPicks.length > 0)
+    ? exercise.quickPicks
+    : (QUICK_PICK_VALUES[exercise.unit] ?? QUICK_PICK_VALUES.reps);
 
   function switchExercise(newId: string) {
     setActiveId(newId);
@@ -98,7 +100,7 @@ export default function LogScreen() {
 
         {/* Reps counter */}
         <View style={{ marginTop: 28 }}>
-          <SectionLabel label={exercise.unit === 'reps' ? t.repsLabel : exercise.unit === 'duration' ? t.durationLabel : t.distanceLabel} />
+          <SectionLabel label={exercise.unit === 'reps' ? t.repsLabel : (exercise.unit === 'distance' || exercise.unit === 'km') ? t.distanceLabel : t.durationLabel} />
         </View>
         <View style={[styles.counter, { borderBottomColor: colors.line }]}>
           <TouchableOpacity
@@ -111,7 +113,11 @@ export default function LogScreen() {
           <View style={styles.counterValue}>
             <Text style={[styles.bigNumber, { color: colors.ink }]}>{value}</Text>
             <Text style={[styles.unitLabel, { color: colors.ink2 }]}>
-              {exercise.unit === 'reps' ? t.reps : exercise.unit === 'duration' ? t.seconds : t.km}
+              {exercise.unit === 'reps' ? t.reps
+                : exercise.unit === 'duration' ? t.seconds
+                : exercise.unit === 'minutes' ? t.minutes
+                : exercise.unit === 'km' ? t.km
+                : t.meters}
             </Text>
           </View>
           <TouchableOpacity
@@ -185,7 +191,11 @@ export default function LogScreen() {
             <Text style={[styles.todayTotal, { color: colors.accentInk }]}>
               {t.total}:{' '}
               <Text style={{ fontWeight: '700', fontSize: 17 }}>{todayTotal}</Text>
-              {' '}{exercise.unit === 'reps' ? t.reps : t.seconds}
+              {' '}{exercise.unit === 'reps' ? t.reps
+                : exercise.unit === 'duration' ? t.seconds
+                : exercise.unit === 'minutes' ? t.minutes
+                : exercise.unit === 'km' ? t.km
+                : t.meters}
             </Text>
             {todayExLogs.map((log, i) => {
               const time = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

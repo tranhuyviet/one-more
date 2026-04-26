@@ -1,5 +1,5 @@
 export type Language = 'vi' | 'en';
-export type Unit = 'reps' | 'duration' | 'distance';
+export type Unit = 'reps' | 'duration' | 'distance' | 'minutes' | 'km';
 
 export type AppearanceMode = 'auto' | 'light' | 'dark';
 
@@ -19,6 +19,7 @@ export interface Exercise {
   color: string;
   muscleGroup?: string;
   dailyGoal?: number;
+  quickPicks?: number[];
   sortOrder: number;
   createdAt: number;
 }

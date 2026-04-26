@@ -28,7 +28,11 @@ export default function DayDetail({ exercises, onAddMore, onHeaderPress }: Props
       {exercises.map(ex => {
         const color = ex.exercise.color;
         const unit = ex.exercise.unit as Unit;
-        const unitLabel = unit === 'reps' ? t.reps : unit === 'duration' ? t.seconds : t.km;
+        const unitLabel = unit === 'reps' ? t.reps
+          : unit === 'duration' ? t.seconds
+          : unit === 'minutes' ? t.minutes
+          : unit === 'km' ? t.km
+          : t.meters;
 
         const header = (
           <View style={styles.cardHeader}>

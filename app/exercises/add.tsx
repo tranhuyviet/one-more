@@ -15,6 +15,7 @@ import SectionLabel from '@/components/ui/SectionLabel';
 import {
   EXERCISE_ICON_OPTIONS,
   EXERCISE_COLOR_OPTIONS,
+  QUICK_PICK_VALUES,
 } from '@/constants/defaultExercises';
 import { Unit } from '@/types';
 
@@ -37,13 +38,31 @@ export default function AddExerciseScreen() {
   const [icon, setIcon] = useState(existing?.icon ?? prefillIcon ?? '💪');
   const [unit, setUnit] = useState<Unit>(existing?.unit ?? 'reps');
   const [color, setColor] = useState(existing?.color ?? EXERCISE_COLOR_OPTIONS[0]);
+  const [quickPicks, setQuickPicks] = useState<string[]>(
+    (existing?.quickPicks ?? QUICK_PICK_VALUES[existing?.unit ?? 'reps'] ?? QUICK_PICK_VALUES.reps).map(String)
+  );
   const [saving, setSaving] = useState(false);
+
+  function handleUnitChange(newUnit: Unit) {
+    setUnit(newUnit);
+    setQuickPicks((QUICK_PICK_VALUES[newUnit] ?? QUICK_PICK_VALUES.reps).map(String));
+  }
+
+  function handleQuickPickChange(index: number, text: string) {
+    const next = [...quickPicks];
+    next[index] = text.replace(/[^0-9]/g, '');
+    setQuickPicks(next);
+  }
 
   async function handleSave() {
     if (!user || !name.trim()) return;
     setSaving(true);
     try {
-      const data = { name: name.trim(), icon, unit, color };
+      const parsedPicks = quickPicks.map(v => parseInt(v, 10)).filter(n => n > 0 && !isNaN(n));
+      const data = {
+        name: name.trim(), icon, unit, color,
+        quickPicks: parsedPicks.length > 0 ? parsedPicks : QUICK_PICK_VALUES[unit] ?? QUICK_PICK_VALUES.reps,
+      };
       if (isEdit) {
         await updateExercise(user.uid, existing!.id, data);
       } else {
@@ -74,11 +93,15 @@ export default function AddExerciseScreen() {
     );
   }
 
-  const units: { id: Unit; label: string; desc: string }[] = [
-    { id: 'reps', label: t.unitReps, desc: t.unitRepsDesc },
-    { id: 'duration', label: t.unitDuration, desc: t.unitDurationDesc },
-    { id: 'distance', label: t.unitDistance, desc: t.unitDistanceDesc },
-  ];
+  const inDurationGroup = unit === 'duration' || unit === 'minutes';
+  const inDistanceGroup = unit === 'distance' || unit === 'km';
+
+  const unitShortLabel =
+    unit === 'reps' ? t.unitReps
+    : unit === 'duration' ? t.unitSeconds
+    : unit === 'minutes' ? t.unitMinutes
+    : unit === 'distance' ? t.unitMeters
+    : t.unitKm;
 
   return (
     <KeyboardAvoidingView
@@ -115,7 +138,7 @@ export default function AddExerciseScreen() {
               {name || t.exerciseName}
             </Text>
             <Text style={[styles.previewMeta, { color: colors.accentInk }]}>
-              {unit === 'reps' ? t.unitReps : unit === 'duration' ? t.unitDuration : t.unitDistance}
+              {unitShortLabel}
             </Text>
           </View>
         </View>
@@ -164,38 +187,182 @@ export default function AddExerciseScreen() {
         {/* Unit */}
         <SectionLabel label={t.unitLabel} />
         <View style={styles.unitList}>
-          {units.map(u => {
-            const active = u.id === unit;
-            return (
+
+          {/* Reps */}
+          <TouchableOpacity
+            style={[
+              styles.unitRow,
+              {
+                borderColor: unit === 'reps' ? colors.accent : colors.line,
+                borderWidth: unit === 'reps' ? 1.5 : 1,
+                backgroundColor: unit === 'reps' ? colors.accentSoft : 'transparent',
+              },
+            ]}
+            onPress={() => handleUnitChange('reps')}
+          >
+            <View style={styles.unitInfo}>
+              <Text style={[styles.unitLabel, { color: unit === 'reps' ? colors.accentInk : colors.ink }]}>
+                {t.unitReps}
+              </Text>
+              <Text style={[styles.unitDesc, { color: unit === 'reps' ? colors.accentInk : colors.ink2 }]}>
+                {t.unitRepsDesc}
+              </Text>
+            </View>
+            <View style={[styles.radio, {
+              borderColor: unit === 'reps' ? colors.accent : colors.line,
+              backgroundColor: unit === 'reps' ? colors.accent : 'transparent',
+            }]}>
+              {unit === 'reps' && <Icon name="check" size={12} stroke="#fff" sw={2.5} />}
+            </View>
+          </TouchableOpacity>
+
+          {/* Duration group */}
+          <TouchableOpacity
+            style={[
+              styles.unitRow,
+              {
+                borderColor: inDurationGroup ? colors.accent : colors.line,
+                borderWidth: inDurationGroup ? 1.5 : 1,
+                backgroundColor: inDurationGroup ? colors.accentSoft : 'transparent',
+              },
+            ]}
+            onPress={() => { if (!inDurationGroup) handleUnitChange('duration'); }}
+          >
+            <View style={styles.unitInfo}>
+              <Text style={[styles.unitLabel, { color: inDurationGroup ? colors.accentInk : colors.ink }]}>
+                {t.unitDuration}
+              </Text>
+              <Text style={[styles.unitDesc, { color: inDurationGroup ? colors.accentInk : colors.ink2 }]}>
+                {t.unitDurationDesc}
+              </Text>
+            </View>
+            <View style={[styles.radio, {
+              borderColor: inDurationGroup ? colors.accent : colors.line,
+              backgroundColor: inDurationGroup ? colors.accent : 'transparent',
+            }]}>
+              {inDurationGroup && <Icon name="check" size={12} stroke="#fff" sw={2.5} />}
+            </View>
+          </TouchableOpacity>
+
+          {inDurationGroup && (
+            <View style={styles.subRow}>
               <TouchableOpacity
-                key={u.id}
-                style={[
-                  styles.unitRow,
-                  {
-                    borderColor: active ? colors.accent : colors.line,
-                    borderWidth: active ? 1.5 : 1,
-                    backgroundColor: active ? colors.accentSoft : 'transparent',
-                  },
-                ]}
-                onPress={() => setUnit(u.id)}
+                style={[styles.subBtn, {
+                  borderColor: unit === 'duration' ? colors.accent : colors.line,
+                  borderWidth: unit === 'duration' ? 1.5 : 1,
+                  backgroundColor: unit === 'duration' ? colors.accentSoft : colors.card,
+                }]}
+                onPress={() => handleUnitChange('duration')}
               >
-                <View style={styles.unitInfo}>
-                  <Text style={[styles.unitLabel, { color: active ? colors.accentInk : colors.ink }]}>
-                    {u.label}
-                  </Text>
-                  <Text style={[styles.unitDesc, { color: active ? colors.accentInk : colors.ink2 }]}>
-                    {u.desc}
-                  </Text>
-                </View>
-                <View style={[styles.radio, {
-                  borderColor: active ? colors.accent : colors.line,
-                  backgroundColor: active ? colors.accent : 'transparent',
-                }]}>
-                  {active && <Icon name="check" size={12} stroke="#fff" sw={2.5} />}
-                </View>
+                <Text style={[styles.subBtnLabel, { color: unit === 'duration' ? colors.accentInk : colors.ink }]}>
+                  {t.unitSeconds}
+                </Text>
+                <Text style={[styles.subBtnDesc, { color: unit === 'duration' ? colors.accentInk : colors.ink2 }]}>
+                  {t.unitSecondsDesc}
+                </Text>
               </TouchableOpacity>
-            );
-          })}
+              <TouchableOpacity
+                style={[styles.subBtn, {
+                  borderColor: unit === 'minutes' ? colors.accent : colors.line,
+                  borderWidth: unit === 'minutes' ? 1.5 : 1,
+                  backgroundColor: unit === 'minutes' ? colors.accentSoft : colors.card,
+                }]}
+                onPress={() => handleUnitChange('minutes')}
+              >
+                <Text style={[styles.subBtnLabel, { color: unit === 'minutes' ? colors.accentInk : colors.ink }]}>
+                  {t.unitMinutes}
+                </Text>
+                <Text style={[styles.subBtnDesc, { color: unit === 'minutes' ? colors.accentInk : colors.ink2 }]}>
+                  {t.unitMinutesDesc}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Distance group */}
+          <TouchableOpacity
+            style={[
+              styles.unitRow,
+              {
+                borderColor: inDistanceGroup ? colors.accent : colors.line,
+                borderWidth: inDistanceGroup ? 1.5 : 1,
+                backgroundColor: inDistanceGroup ? colors.accentSoft : 'transparent',
+              },
+            ]}
+            onPress={() => { if (!inDistanceGroup) handleUnitChange('distance'); }}
+          >
+            <View style={styles.unitInfo}>
+              <Text style={[styles.unitLabel, { color: inDistanceGroup ? colors.accentInk : colors.ink }]}>
+                {t.unitDistance}
+              </Text>
+              <Text style={[styles.unitDesc, { color: inDistanceGroup ? colors.accentInk : colors.ink2 }]}>
+                {t.unitDistanceDesc}
+              </Text>
+            </View>
+            <View style={[styles.radio, {
+              borderColor: inDistanceGroup ? colors.accent : colors.line,
+              backgroundColor: inDistanceGroup ? colors.accent : 'transparent',
+            }]}>
+              {inDistanceGroup && <Icon name="check" size={12} stroke="#fff" sw={2.5} />}
+            </View>
+          </TouchableOpacity>
+
+          {inDistanceGroup && (
+            <View style={styles.subRow}>
+              <TouchableOpacity
+                style={[styles.subBtn, {
+                  borderColor: unit === 'distance' ? colors.accent : colors.line,
+                  borderWidth: unit === 'distance' ? 1.5 : 1,
+                  backgroundColor: unit === 'distance' ? colors.accentSoft : colors.card,
+                }]}
+                onPress={() => handleUnitChange('distance')}
+              >
+                <Text style={[styles.subBtnLabel, { color: unit === 'distance' ? colors.accentInk : colors.ink }]}>
+                  {t.unitMeters}
+                </Text>
+                <Text style={[styles.subBtnDesc, { color: unit === 'distance' ? colors.accentInk : colors.ink2 }]}>
+                  {t.unitMetersDesc}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.subBtn, {
+                  borderColor: unit === 'km' ? colors.accent : colors.line,
+                  borderWidth: unit === 'km' ? 1.5 : 1,
+                  backgroundColor: unit === 'km' ? colors.accentSoft : colors.card,
+                }]}
+                onPress={() => handleUnitChange('km')}
+              >
+                <Text style={[styles.subBtnLabel, { color: unit === 'km' ? colors.accentInk : colors.ink }]}>
+                  {t.unitKm}
+                </Text>
+                <Text style={[styles.subBtnDesc, { color: unit === 'km' ? colors.accentInk : colors.ink2 }]}>
+                  {t.unitKmDesc}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Quick picks */}
+        <SectionLabel label={`${t.quickPickSetup} (${unitShortLabel.toLowerCase()})`} />
+        <View style={styles.quickPickGrid}>
+          {quickPicks.map((v, i) => (
+            <TextInput
+              key={i}
+              style={[styles.quickPickInput, {
+                backgroundColor: colors.card,
+                borderColor: v && parseInt(v) > 0 ? colors.accent : colors.line,
+                borderWidth: v && parseInt(v) > 0 ? 1.5 : 1,
+                color: colors.ink,
+              }]}
+              value={v}
+              onChangeText={text => handleQuickPickChange(i, text)}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={colors.ink2}
+              textAlign="center"
+            />
+          ))}
         </View>
 
         {/* Color */}
@@ -260,7 +427,7 @@ const styles = StyleSheet.create({
   previewName: { fontSize: 18, fontWeight: '600', marginTop: 2 },
   previewMeta: { fontSize: 12, marginTop: 2, opacity: 0.85 },
   nameInput: { borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '500', marginTop: 10, marginBottom: 28 },
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 0 },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
   iconCell: { width: '14%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 22 },
   unitList: { gap: 8, marginTop: 10, marginBottom: 28 },
@@ -269,6 +436,17 @@ const styles = StyleSheet.create({
   unitLabel: { fontSize: 15, fontWeight: '600' },
   unitDesc: { fontSize: 12, marginTop: 2, opacity: 0.8 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  subRow: { flexDirection: 'row', gap: 8, paddingLeft: 8 },
+  subBtn: { flex: 1, padding: 12, borderRadius: 10, borderWidth: 1 },
+  subBtnLabel: { fontSize: 14, fontWeight: '600' },
+  subBtnDesc: { fontSize: 11, marginTop: 3, opacity: 0.8 },
+  quickPickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
+  quickPickInput: {
+    width: '30%', flexGrow: 1,
+    paddingVertical: 14, borderRadius: 12,
+    fontSize: 16, fontWeight: '500',
+    borderWidth: 1,
+  },
   colorRow: { flexDirection: 'row', gap: 10, marginTop: 10, marginBottom: 28 },
   colorDot: { width: 40, height: 40, borderRadius: 20 },
 });

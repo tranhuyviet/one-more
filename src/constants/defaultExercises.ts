@@ -40,8 +40,10 @@ export const SUGGESTED_EXERCISES = [
   { icon: '🤸', name: 'Burpee' },
 ];
 
-export const QUICK_PICK_VALUES = {
-  reps: [5, 10, 15, 20, 25, 30],
-  duration: [15, 30, 45, 60, 90, 120],
-  distance: [100, 200, 500, 1000, 2000, 5000],
+export const QUICK_PICK_VALUES: Record<string, number[]> = {
+  reps:     [5, 10, 15, 20, 25, 30],
+  duration: [15, 30, 45, 60, 90, 120],  // giây — backward compat
+  minutes:  [5, 10, 15, 20, 30, 45],
+  distance: [50, 100, 200, 400, 800, 1000],  // mét — backward compat
+  km:       [1, 2, 3, 5, 10, 15],
 };
