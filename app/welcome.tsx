@@ -83,6 +83,7 @@ export default function WelcomeScreen() {
             placeholderTextColor={colors.ink2}
             autoFocus
             returnKeyType="done"
+            maxLength={50}
           />
         </View>
 

@@ -124,6 +124,7 @@ export default function ProfileScreen() {
                   onSubmitEditing={handleNameSave}
                   autoFocus
                   returnKeyType="done"
+                  maxLength={50}
                 />
               ) : (
                 <TouchableOpacity

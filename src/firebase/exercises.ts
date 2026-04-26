@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { Exercise } from '@/types';
+import { ExerciseSchema } from '@/schemas';
 
 function exercisesCol(userId: string) {
   return collection(db, 'users', userId, 'exercises');
@@ -12,7 +13,14 @@ function exercisesCol(userId: string) {
 export async function getExercises(userId: string): Promise<Exercise[]> {
   const q = query(exercisesCol(userId), orderBy('sortOrder', 'asc'));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Exercise));
+  return snap.docs.flatMap(d => {
+    const result = ExerciseSchema.safeParse({ id: d.id, ...d.data() });
+    if (!result.success) {
+      console.warn('[Firebase] Invalid exercise doc:', d.id, result.error.issues);
+      return [];
+    }
+    return [result.data as Exercise];
+  });
 }
 
 export async function addExercise(

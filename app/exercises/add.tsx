@@ -18,7 +18,7 @@ import {
   QUICK_PICK_VALUES,
 } from '@/constants/defaultExercises';
 import { Unit } from '@/types';
-
+import { CreateExerciseInputSchema } from '@/schemas';
 
 export default function AddExerciseScreen() {
   const { id: editId, name: prefillName, icon: prefillIcon } = useLocalSearchParams<{
@@ -42,6 +42,7 @@ export default function AddExerciseScreen() {
     (existing?.quickPicks ?? QUICK_PICK_VALUES[existing?.unit ?? 'reps'] ?? QUICK_PICK_VALUES.reps).map(String)
   );
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   function handleUnitChange(newUnit: Unit) {
     setUnit(newUnit);
@@ -55,18 +56,26 @@ export default function AddExerciseScreen() {
   }
 
   async function handleSave() {
-    if (!user || !name.trim()) return;
+    if (!user) return;
+    const parsedPicks = quickPicks.map(v => parseInt(v, 10)).filter(n => n > 0 && !isNaN(n));
+    const input = {
+      name: name.trim(), icon, unit, color,
+      quickPicks: parsedPicks.length > 0 ? parsedPicks : QUICK_PICK_VALUES[unit] ?? QUICK_PICK_VALUES.reps,
+      sortOrder: exercises.length,
+    };
+    const validation = CreateExerciseInputSchema.safeParse(input);
+    if (!validation.success) {
+      const nameIssue = validation.error.issues.find(i => i.path[0] === 'name');
+      setNameError(nameIssue?.message ?? '');
+      return;
+    }
+    setNameError('');
     setSaving(true);
     try {
-      const parsedPicks = quickPicks.map(v => parseInt(v, 10)).filter(n => n > 0 && !isNaN(n));
-      const data = {
-        name: name.trim(), icon, unit, color,
-        quickPicks: parsedPicks.length > 0 ? parsedPicks : QUICK_PICK_VALUES[unit] ?? QUICK_PICK_VALUES.reps,
-      };
       if (isEdit) {
-        await updateExercise(user.uid, existing!.id, data);
+        await updateExercise(user.uid, existing!.id, input);
       } else {
-        await addExercise(user.uid, { ...data, sortOrder: exercises.length, createdAt: Date.now() });
+        await addExercise(user.uid, { ...input, createdAt: Date.now() });
       }
       router.back();
     } finally {
@@ -147,17 +156,23 @@ export default function AddExerciseScreen() {
         <SectionLabel label={t.exerciseName} />
         <TextInput
           style={[styles.nameInput, {
-            borderColor: name ? colors.accent : colors.line,
-            borderWidth: name ? 1.5 : 1,
+            borderColor: nameError ? '#E53935' : name ? colors.accent : colors.line,
+            borderWidth: nameError || name ? 1.5 : 1,
             backgroundColor: colors.card,
             color: colors.ink,
           }]}
           value={name}
-          onChangeText={setName}
+          onChangeText={t => { setName(t); if (nameError) setNameError(''); }}
           placeholder={t.exerciseName}
           placeholderTextColor={colors.ink2}
           autoFocus={!isEdit}
+          maxLength={50}
         />
+        {nameError ? (
+          <Text style={styles.errorText}>{nameError}</Text>
+        ) : (
+          <Text style={[styles.charCount, { color: colors.ink2 }]}>{name.length}/50</Text>
+        )}
 
         {/* Icon */}
         <SectionLabel label={t.chooseIcon} />
@@ -434,7 +449,9 @@ const styles = StyleSheet.create({
   previewTag: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   previewName: { fontSize: 18, fontWeight: '600', marginTop: 2 },
   previewMeta: { fontSize: 12, marginTop: 2, opacity: 0.85 },
-  nameInput: { borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '500', marginTop: 10, marginBottom: 28 },
+  nameInput: { borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '500', marginTop: 10 },
+  errorText: { fontSize: 12, color: '#E53935', marginTop: 6, marginBottom: 22 },
+  charCount: { fontSize: 11, textAlign: 'right', marginTop: 4, marginBottom: 22 },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, marginBottom: 28 },
   iconCell: { width: '14%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 22 },

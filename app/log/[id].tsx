@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button';
 import SetRow from '@/components/exercise/SetRow';
 import SectionLabel from '@/components/ui/SectionLabel';
 import { QUICK_PICK_VALUES } from '@/constants/defaultExercises';
+import { CreateLogInputSchema } from '@/schemas';
 
 export default function LogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,14 +54,12 @@ export default function LogScreen() {
 
   async function handleSave() {
     if (!user) return;
+    const input = { exerciseId: exercise!.id, value, note: note.trim() };
+    const validation = CreateLogInputSchema.safeParse(input);
+    if (!validation.success) return;
     setSaving(true);
     try {
-      await addLog(user.uid, {
-        exerciseId: exercise!.id,
-        value,
-        note: note.trim(),
-        createdAt: Date.now(),
-      });
+      await addLog(user.uid, { ...input, createdAt: Date.now() });
       setNote('');
       router.back();
     } finally {
@@ -173,6 +172,7 @@ export default function LogScreen() {
           placeholder={t.notesPh}
           placeholderTextColor={colors.ink2}
           multiline
+          maxLength={200}
         />
 
         <Button label={t.save} onPress={handleSave} loading={saving} style={{ marginTop: 20 }} />

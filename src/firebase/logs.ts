@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { ExerciseLog, DailyStats } from '@/types';
+import { ExerciseLogSchema } from '@/schemas';
 
 function logsCol(userId: string) {
   return collection(db, 'users', userId, 'exercise_logs');
@@ -21,7 +22,14 @@ export async function getLogs(
     orderBy('createdAt', 'desc'),
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ExerciseLog));
+  return snap.docs.flatMap(d => {
+    const result = ExerciseLogSchema.safeParse({ id: d.id, ...d.data() });
+    if (!result.success) {
+      console.warn('[Firebase] Invalid log doc:', d.id, result.error.issues);
+      return [];
+    }
+    return [result.data as ExerciseLog];
+  });
 }
 
 export async function getTodayLogs(userId: string): Promise<ExerciseLog[]> {
