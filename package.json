@@ -19,7 +19,28 @@
     "upload:testflight": "eas submit --profile production --platform ios",
     "migrate": "tsx migrations/runner.ts",
     "migrate:status": "tsx migrations/runner.ts status",
-    "migrate:up": "tsx migrations/runner.ts up"
+    "migrate:up": "tsx migrations/runner.ts up",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "transform": {
+      "^.+\\.tsx?$": ["ts-jest", {
+        "tsconfig": {
+          "strict": true,
+          "esModuleInterop": true,
+          "paths": { "@/*": ["src/*"] }
+        }
+      }]
+    }
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -33,11 +54,16 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
+    "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
     "firebase-admin": "^13.8.0",
+    "jest-expo": "~54.0.17",
+    "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   },
